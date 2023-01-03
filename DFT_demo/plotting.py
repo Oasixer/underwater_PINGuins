@@ -20,14 +20,14 @@ class Plotter:
 
         plt.subplot(3, 1, 2)
         plt.scatter(time * 1000, received, s=1.0)
-        plt.ylim(-4.5, 4.5)
+        plt.ylim(0, 2**12)
         plt.xlabel("Time [ms]")
         plt.ylabel("Amplitude Received")
         plt.tight_layout()
 
         plt.subplot(3, 1, 3)
         plt.stem(self.frequencies / 1000, abs(freq_domain), markerfmt=' ', basefmt="-b")
-        plt.ylim(0, 1.5)
+        plt.ylim(0, 500)
         plt.xlim(6_000 / 1000, 30_000 /1000)
         plt.xlabel("Freq [KHz]")
         plt.ylabel("|X(freq)|")
