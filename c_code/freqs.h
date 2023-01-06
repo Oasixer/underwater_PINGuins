@@ -1,5 +1,5 @@
-#ifndef FREQUENCIES_H
-#define FREQUENCIES_H
+#ifndef FYDP_FREQUENCIES_H
+#define FYDP_FREQUENCIES_H
 
 #include <stdint.h>
 
@@ -13,10 +13,11 @@
 #define N_FREQUENCIES 6  // number of frequencies
 
 /* Define different frequencies to encode messages*/
-const uint16_t F_LOW = 10000;  // Hz
-const uint16_t F_HIGH =  18000;  // Hz
-const uint16_t F_STATIONARY[N_STATIONARY] = {26000, 34000, 42000}; // Hz
-const uint16_t F_ALL = 48000;  // Hz
-
+#define F_LOW 10000  // Hz
+#define F_HIGH 18000  // Hz
+#define F_STATIONARY_1 26000  // Hz
+#define F_STATIONARY_2 34000  // Hz
+#define F_STATIONARY_3 42000  // Hz
+#define F_ALL 48000  // Hz
 
 #endif

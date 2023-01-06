@@ -9,9 +9,9 @@ void initialize_fourier(){
     uint16_t k[N_FREQUENCIES] = {
         F_LOW / F_NATURAL,
         F_HIGH / F_NATURAL,
-        F_STATIONARY[0] / F_NATURAL,
-        F_STATIONARY[1] / F_NATURAL,
-        F_STATIONARY[2] / F_NATURAL,
+        F_STATIONARY_1 / F_NATURAL,
+        F_STATIONARY_2 / F_NATURAL,
+        F_STATIONARY_3 / F_NATURAL,
         F_ALL / F_NATURAL,
     };
     for (size_t i = 0; i < N_FREQUENCIES; ++i){
@@ -21,7 +21,7 @@ void initialize_fourier(){
     }
 }
 
-void update_fourier(uint8_t new_sample){
+void update_fourier(complex_t *fourier_domain, uint8_t new_sample){
     uint8_t old_sample = ring_buffer_read(&ring_buffer);
     uint8_t difference = new_sample - old_sample;
     for (size_t i = 0; i < N_FREQUENCIES; ++i){
