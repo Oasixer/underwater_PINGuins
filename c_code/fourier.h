@@ -1,18 +1,16 @@
-#ifndef FOURIER_H
-#define FOURIER_H
+#ifndef FYDP_FOURIER_H
+#define FYDP_FOURIER_H
 
 #include <stdint.h>
 #include <math.h>
 
 #include "complex_type.h"
-#include "frequencies.h"
+#include "freqs.h"
 #include "ring_buffer.h"
 
-const uint16_t SZ_WINDOW = 1250;  // Samples
-
-complex_t fourier_domain[N_FREQUENCIES] = {{0}};
+#define SZ_WINDOW 1250;  // Samples
 
 void initialize_fourier();
-void update_fourier(uint8_t new_sample);
+void update_fourier(complex_t *fourier_domain, uint8_t new_sample);
 
 #endif

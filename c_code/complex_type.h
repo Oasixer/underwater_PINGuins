@@ -1,5 +1,5 @@
-#ifndef COMPLEX_H
-#define COMPLEX_H
+#ifndef FYDP_COMPLEX_H
+#define FYDP_COMPLEX_H
 
 #include <float.h>
 #include <math.h>

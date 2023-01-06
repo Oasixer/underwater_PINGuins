@@ -1,5 +1,5 @@
-#ifndef MULTILATERATION_H
-#define MULTILATERATION_H
+#ifndef FYDP_MULTILATERATION_H
+#define FYDP_MULTILATERATION_H
 
 #include <math.h>
 #include <stdbool.h>
@@ -10,4 +10,4 @@
 
 coord_3d_t multilaterate(coord_3d_t node_coords_3d[N_ALL_NODES], float dists_3d[N_ALL_NODES], float curr_depth, float og_depth);
 
-#endif //MULTILATERATION_H
+#endif
