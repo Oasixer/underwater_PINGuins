@@ -4,15 +4,15 @@ void get_points_of_intersection(coord_2d_t *intersections, float dists[2], coord
     float diff = dist_between_points_2d(coords[0], coords[1]);
     float angle = atan2f(coords[1].y - coords[0].y, coords[1].x - coords[0].x);
 
-    float x_local = (powf(dists[0], 2) - powf(dists[1], 2) - powf(diff, 2)) / (2 * diff);
+    float x_local = (powf(dists[0], 2) - powf(dists[1], 2) + powf(diff, 2)) / (2 * diff);
     float y1_local = sqrtf(powf(dists[0], 2) - powf(x_local, 2));
     float y2_local = -y1_local;
 
     intersections[0].x = x_local*cosf(angle) - y1_local*sinf(angle) + coords[0].x;
     intersections[1].x = x_local*cosf(angle) - y2_local*sinf(angle) + coords[0].x;
 
-    intersections[0].x = x_local*sinf(angle) + y1_local*cosf(angle) + coords[0].x;
-    intersections[1].x = x_local*sinf(angle) + y2_local*cosf(angle) + coords[0].x;
+    intersections[0].y = x_local*sinf(angle) + y1_local*cosf(angle) + coords[0].y;
+    intersections[1].y = x_local*sinf(angle) + y2_local*cosf(angle) + coords[0].y;
 }
 
 coord_3d_t multilaterate(coord_3d_t node_coords_3d[N_ALL_NODES], float dists_3d[N_ALL_NODES], float curr_depth, float og_depth){
@@ -28,6 +28,7 @@ coord_3d_t multilaterate(coord_3d_t node_coords_3d[N_ALL_NODES], float dists_3d[
         node_coords_2d[i].x = node_coords_3d[i].x;
         node_coords_2d[i].y = node_coords_3d[i].y;
     }
+//    printf("node_coords_2d: (%.2f, %.2f), (%.2f, %.2f), (%.2f, %.2f), (%.2f, %.2f)\n", node_coords_2d[0].x, node_coords_2d[0].y, node_coords_2d[1].x, node_coords_2d[1].y, node_coords_2d[2].x, node_coords_2d[2].y, node_coords_2d[3].x, node_coords_2d[3].y);
 
     // get the coordinates of the points of intersection
     coord_2d_t points_of_intersection[6];
