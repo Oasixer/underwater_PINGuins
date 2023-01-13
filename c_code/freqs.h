@@ -20,4 +20,22 @@
 #define F_STATIONARY_3 42000  // Hz
 #define F_ALL 48000  // Hz
 
+enum FREQ_INDICES{
+    IDX_F_LOW,
+    IDX_F_HIGH,
+    IDX_F_STATIONARY_1,
+    IDX_F_STATIONARY_2,
+    IDX_F_STATIONARY_3,
+    IDX_F_ALL,
+};
+
+static uint16_t FREQUENCIES[N_FREQUENCIES] = {
+        F_LOW,
+        F_HIGH,
+        F_STATIONARY_1,
+        F_STATIONARY_2,
+        F_STATIONARY_3,
+        F_ALL,
+};
+
 #endif
