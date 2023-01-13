@@ -1,31 +1,33 @@
 #include "fourier.h"
 
-complex_t shift_factor[N_FREQUENCIES];
+ring_buffer_t ring_buffer = {0};  // Ring Buffer to hold the real domain
 
-ring_buffer_t ring_buffer = RING_BUFFER_DEFAULT;
+complex_t fourier_domain[N_FREQUENCIES] = {{0}};  // list to represent the fourier domain
+complex_t shift_factor[N_FREQUENCIES];  // list to represent the factor to shift the fourier domain every update
 
-void initialize_fourier(){
+void fourier_initialize(){
     uint16_t F_NATURAL = F_SAMPLE / SZ_WINDOW;
-    uint16_t k[N_FREQUENCIES] = {
-        F_LOW / F_NATURAL,
-        F_HIGH / F_NATURAL,
-        F_STATIONARY_1 / F_NATURAL,
-        F_STATIONARY_2 / F_NATURAL,
-        F_STATIONARY_3 / F_NATURAL,
-        F_ALL / F_NATURAL,
-    };
-    for (size_t i = 0; i < N_FREQUENCIES; ++i){
-        float theta = 2. * M_PI * k[i] / SZ_WINDOW;
+    for (uint8_t i = 0; i < N_FREQUENCIES; ++i){
+        uint16_t k = FREQUENCIES[i] / F_NATURAL;
+        float theta = 2. * M_PI * k / SZ_WINDOW;
         shift_factor[i].real = cosf(theta);
         shift_factor[i].imaginary = sinf(theta);
     }
 }
 
-void update_fourier(complex_t *fourier_domain, uint8_t new_sample){
-    uint8_t old_sample = ring_buffer_read(&ring_buffer);
-    uint8_t difference = new_sample - old_sample;
-    for (size_t i = 0; i < N_FREQUENCIES; ++i){
-        complex_add_real(&fourier_domain[i], difference);
-        complex_multiply_complex(&fourier_domain[i], shift_factor[i]);
+void fourier_update(float *amplitudes, uint16_t new_sample){
+    uint16_t old_sample = ring_buffer_read_and_replace(&ring_buffer, new_sample);
+    float difference = (float)(new_sample - old_sample);
+    for (uint8_t i = 0; i < N_FREQUENCIES; ++i){
+        fourier_domain[i] = complex_add_real(fourier_domain[i], difference);
+        fourier_domain[i] = complex_multiply_complex(fourier_domain[i], shift_factor[i]);
+        amplitudes[i] = complex_magnitude(fourier_domain[i]);
     }
+}
+
+void fourier_print_ring_buffer(){
+    for (uint16_t i = 0; i < RING_BUFFER_SIZE; i++){
+        printf("%i,\n", ring_buffer.data[i]);
+    }
+    printf("\n");
 }

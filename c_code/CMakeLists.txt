@@ -11,5 +11,6 @@ add_executable(c_code
         multilateration.c
         positions.c
         ring_buffer.c
+        unit_tests.c
         utils.c
         )

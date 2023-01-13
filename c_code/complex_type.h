@@ -9,9 +9,9 @@ typedef struct{
     float imaginary;
 } complex_t;
 
-void complex_multiply_complex(complex_t *c1, complex_t c2);
-void complex_add_real(complex_t *c1, float real);
+complex_t complex_multiply_complex(complex_t c1, complex_t c2);
+complex_t complex_add_real(complex_t c1, float real);
 
-float complex_magnitude(complex_t *c);
+float complex_magnitude(complex_t c);
 
 #endif
