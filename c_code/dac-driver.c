@@ -15,8 +15,8 @@ void set_analog(uint16_t value){
 }
 
 void set_analog_float(float value){
-    // Sets the dac output to value. value should be between 0 and 1 (inclusive)
-    // if value not between 0 and 1, incorrect output will be set
-    uint16_t integer_value = (uint16_t)roundf(value*0x3FFF);
+    // Sets the dac output to value. value should be between -1 and 1 (inclusive)
+    // if value not between -1 and 1, incorrect output will be set
+    uint16_t integer_value = (uint16_t)roundf((value+1.0)*0x1FFF);
     set_analog(integer_value);
 }
