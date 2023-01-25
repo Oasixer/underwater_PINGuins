@@ -30,8 +30,8 @@ bool calculate_coordinates(coord_3d_t *coords, distances_t dists_3d[N_ALL_NODES]
     bool possible_to_calculate = true;
 
     // check that no pair of nodes are directly above each other
-    for (size_t i = 0; i < N_ALL_NODES; ++i){
-        for (size_t j = 0; j < N_STATIONARY; ++j){
+    for (uint8_t i = 0; i < N_ALL_NODES; ++i){
+        for (uint8_t j = 0; j < N_STATIONARY; ++j){
             if (i != j && dists_2d[i].dist[j] < MIN_2D_DISTANCE){
                 possible_to_calculate = false;
             }
