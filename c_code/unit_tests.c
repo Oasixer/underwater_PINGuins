@@ -270,3 +270,118 @@ bool test_multilateration(){
 
     return all_tests_pass;
 }
+
+bool test_calculate_coordinates(){
+    // Test in the following coordinates
+    coord_3d_t origin_coord = {0, 0, 0};
+    coord_3d_t stationary_1_coords[2] = {{1, 0, 0}, {2.5, 0, -3}};  // both in 1st quadrant
+    coord_3d_t stationary_2_coords[3] = {{3, 2, -2}, {-1, 4, 2}, {0, 3, -2}}; // 1st, 2nd quadrant, and y axis
+    coord_3d_t stationary_3_coords[4] = {{2, 5, -4}, {-4, 1, 0}, {-7, -2, 2}, {2, 5, -1}}; // each quadrant
+    float rov_depths[2] = {-5, -10};  // two different depths of the ROV
+
+    bool quadrant_tests_pass = true;
+
+    for (uint8_t idx_depth = 0; idx_depth < 2; idx_depth++) {
+        for (uint8_t idx_stationary_1_coord = 0; idx_stationary_1_coord < 2; idx_stationary_1_coord++) {
+            for (uint8_t idx_stationary_2_coord = 0; idx_stationary_2_coord < 3; idx_stationary_2_coord++) {
+                for (uint8_t idx_stationary_3_coord = 0; idx_stationary_3_coord < 4; idx_stationary_3_coord++) {
+                    // create array of actual coordinates
+                    coord_3d_t actual_coords[N_ALL_NODES] = {
+                            origin_coord,
+                            stationary_1_coords[idx_stationary_1_coord],
+                            stationary_2_coords[idx_stationary_2_coord],
+                            stationary_3_coords[idx_stationary_3_coord],
+                    };
+
+                    // create depths array
+                    float depths[N_ALL_NODES] = {0};
+                    for (uint8_t i = 0; i < N_ALL_NODES; ++i) {
+                        depths[i] = actual_coords[i].z + rov_depths[idx_depth];
+                    }
+
+                    // create array of distances between nodes
+                    distances_t distances[N_ALL_NODES] = {{0}};
+                    for (uint8_t i = 0; i < N_ALL_NODES; ++i){
+                        for (uint8_t j = 0; j < N_ALL_NODES; ++j){
+                            distances[i].dist[j] = dist_between_points_3d(actual_coords[i], actual_coords[j]);
+                        }
+                    }
+
+                    // create a calculated array and call the calculate_coordinates function
+                    coord_3d_t calculated_coords[N_ALL_NODES] = {0};
+                    bool test_passed = calculate_coordinates(calculated_coords, distances, depths);
+
+                    // verify if correct
+                    for (int i = 0; i < N_ALL_NODES; ++i){
+                        quadrant_tests_pass &= (fabsf(calculated_coords[i].x - actual_coords[i].x) < 1e-5
+                                                && fabsf(calculated_coords[i].y - actual_coords[i].y) < 1e-5
+                                                && fabsf(calculated_coords[i].z - actual_coords[i].z) < 1e-5);
+                    }
+
+                    if(!test_passed){
+                        quadrant_tests_pass = false;
+                        printf("actual: (%.2f, %.2f, %.2f), (%.2f, %.2f, %.2f), (%.2f, %.2f, %.2f), (%.2f, %.2f, %.2f)\n",
+                               actual_coords[0].x, actual_coords[0].y, actual_coords[0].z,
+                               actual_coords[1].x, actual_coords[1].y, actual_coords[1].z,
+                               actual_coords[2].x, actual_coords[2].y, actual_coords[2].z,
+                               actual_coords[3].x, actual_coords[3].y, actual_coords[3].z);
+                        printf("calculated: (%.2f, %.2f, %.2f), (%.2f, %.2f, %.2f), (%.2f, %.2f, %.2f), (%.2f, %.2f, %.2f)\n",
+                               calculated_coords[0].x, calculated_coords[0].y, calculated_coords[0].z,
+                               calculated_coords[1].x, calculated_coords[1].y, calculated_coords[1].z,
+                               calculated_coords[2].x, calculated_coords[2].y, calculated_coords[2].z,
+                               calculated_coords[3].x, calculated_coords[3].y, calculated_coords[3].z);
+                    }
+                }
+            }
+        }
+    }
+    if (quadrant_tests_pass){
+        printf("Calibration quadrant tests Passed\n");
+    } else {
+        printf("Calibration quadrant tests Failed\n");
+    }
+
+    /* for completeness, test that edge cases won't break the code */
+    // if ROV collinear with nodes, should not cause an issue
+    coord_3d_t rov_collinear_actual[N_ALL_NODES] = {
+            {0, 0, 0},
+            {1, 0, 0},
+            {-2, 0, 0},
+            {4, -3, 0}
+    };
+    distances_t distances_collinear[N_ALL_NODES] = {
+            {{0, 1, 2, 5}},
+            {{1, 0, 3, sqrtf(18)}},
+            {{2, 3, 0, sqrtf(45)}},
+            {{5, sqrtf(18), sqrtf(45), 0}}
+    };
+    float collinear_depths[N_ALL_NODES] = {-5, -5, -5, -5};
+    coord_3d_t rov_collinear_calculated[N_ALL_NODES] = {{}};
+    // verify if doesn't break. Don't check values
+    bool rov_collinear_test_passed = calculate_coordinates(rov_collinear_calculated, distances_collinear, collinear_depths);;
+
+    // test if all three nodes are collinear
+    coord_3d_t all_three_collinear_coords_actual[N_ALL_NODES] = {
+            {0, 0, 0},
+            {1, 0, 0},
+            {1, 1, 0},
+            {1, -1, 0},
+    };
+    distances_t all_three_collinear_distances[N_ALL_NODES] = {
+            {{0, 1, sqrtf(2), sqrtf(2)}},
+            {{1, 0, 1, 1}},
+            {{sqrtf(2), 1, 0, 2}},
+            {{sqrtf(2), 1, 2, 0}},
+    };
+    coord_3d_t all_three_collinear_calculated[N_ALL_NODES] = {{}};
+    // verify if doesn't break. Don't check values
+    bool all_three_collinear_test_passed = calculate_coordinates(all_three_collinear_calculated, all_three_collinear_distances, collinear_depths);
+
+    bool all_tests_pass = quadrant_tests_pass && rov_collinear_test_passed && all_three_collinear_test_passed;
+    if (all_tests_pass){
+        printf("Calibration all tests Passed\n\n");
+    } else {
+        printf("Calibration tests Failed\n\n");
+    }
+    return all_tests_pass;
+}

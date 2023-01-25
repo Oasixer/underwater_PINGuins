@@ -16,5 +16,6 @@ bool test_ring_buffer_read_and_replace();
 bool test_fourier();
 bool test_complex_type();
 bool test_multilateration();
+bool test_calculate_coordinates();
 
 #endif

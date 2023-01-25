@@ -28,7 +28,6 @@ coord_3d_t multilaterate(coord_3d_t node_coords_3d[N_ALL_NODES], float dists_3d[
         node_coords_2d[i].x = node_coords_3d[i].x;
         node_coords_2d[i].y = node_coords_3d[i].y;
     }
-//    printf("node_coords_2d: (%.2f, %.2f), (%.2f, %.2f), (%.2f, %.2f), (%.2f, %.2f)\n", node_coords_2d[0].x, node_coords_2d[0].y, node_coords_2d[1].x, node_coords_2d[1].y, node_coords_2d[2].x, node_coords_2d[2].y, node_coords_2d[3].x, node_coords_2d[3].y);
 
     // get the coordinates of the points of intersection
     coord_2d_t points_of_intersection[6];
