@@ -4,4 +4,6 @@ venv/
 */frames
 /**/data
 
+/__pycache__/
+
 */*.gif
