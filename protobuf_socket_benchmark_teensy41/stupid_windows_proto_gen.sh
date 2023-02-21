@@ -21,7 +21,9 @@ do
 	mv -v proto/$i.pb.c ./main/
 done
 # protoc --python_out=./dashboard ./proto/*_data.proto
-~/protoc/bin/protoc --python_out=./dashboard ./proto/*_data.proto
+# ~/protoc/bin/protoc --python_out=./dashboard ./proto/*_data.proto
+main/src/nanopb/generator/protoc --python_out=./dashboard ./proto/*_data.proto 
+# main/src/nanopb/generator/protoc --python_out=./dashboard ./proto/*_data.proto 
 
 # replace "#include <pb.h>" with "#include "src/nanopb/pb.h" in all generated .pb.h files in main/
 sed -i 's/#include <pb.h>/#include "src\/nanopb\/pb.h"/g' main/*.pb.h

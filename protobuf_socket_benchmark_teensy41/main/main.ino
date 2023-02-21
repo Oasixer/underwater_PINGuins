@@ -21,7 +21,10 @@ IPAddress myDns(192, 168, 0, 1);
 
 EthernetClient client;
 
-uint8_t buffer[600];
+uint8_t buffer[1500];
+
+#define READINGS_PER_MSG sizeof(TmpData::data) / sizeof(uint32_t)
+
 
 // automatically set mac addr of teensy (client)
 void teensyMAC(uint8_t *mac) {
@@ -41,7 +44,7 @@ void serializeData(pb_ostream_t& stream, TmpData* tmpData){
 void serializeData2(pb_ostream_t& stream, TmpData* tmpData) {
     // Encode the fields directly to the buffer
     pb_encode_tag(&stream, PB_WT_VARINT, TmpData_data_tag);
-    for (int i=0; i<16; i++){
+    for (int i=0; i<READINGS_PER_MSG; i++){
       pb_encode_varint(&stream, tmpData->data[i]);
     }
 }
@@ -50,6 +53,7 @@ void setup() {
   Serial.begin(9600);
   teensyMAC(mac);
 
+  // Serial.print("Data length: "); Serial.println(READINGS_PER_MSG);
   // start the Ethernet connection:
   Serial.println("Initialize Ethernet with DHCP:");
   if (Ethernet.begin(mac) == 0) {
@@ -70,15 +74,15 @@ void setup() {
     Serial.print("  DHCP assigned IP ");
     Serial.println(Ethernet.localIP());
   }
+}
+
+void loop(){
   // give the Ethernet shield a second to initialize:
   delay(1000);
   Serial.print("connecting to ");
   Serial.print(serverIp);
   Serial.println("...");
   
-}
-
-void loop(){
   // if you get a connection, report back via serial:
   // if (client.connect(server, 80)) {
   if (client.connect(serverIp, 6969)) {
@@ -89,29 +93,36 @@ void loop(){
     Serial.println("connection failed");
   }
 
-  #define BENCHMARK_BYTES 1000000
+  #define BENCHMARK_BYTES 1000
  
   uint64_t sentBytes = 0;
   TmpData tmpData = TmpData_init_zero;
   unsigned long startTime = millis();
 
   uint64_t i = 0;
-  uint64_t total_micros = 0;
+  uint64_t writing_micros = 0;
   while (sentBytes < BENCHMARK_BYTES){//BENCHMARK_BYTES) { // send 1MB of data
     //Serial.print("uh");
-    for (int i = 0; i < 64; i++) {
-      tmpData.data[i] = 5555569; // test value, will be real data later
+    for (uint16_t i = 0; i < READINGS_PER_MSG; i++) {
+      tmpData.data[i] = 4095-i%2; // test value, will be real data later
     }
+
     pb_ostream_t stream;
     //stream = pb_ostream_from_buffer(stream, sizeof(buffer));
     stream = pb_ostream_from_buffer(buffer, sizeof(buffer));
+    //serializeData2(stream, &tmpData);
     serializeData2(stream, &tmpData);
-    //serializeData(stream, &tmpData);
     //Serial.print("a");
     unsigned long beforeSendT = micros();
     int n = client.write(buffer, stream.bytes_written); // takes 0-2 ms
+    // Serial.print("bytes written: ");
+    // Serial.println(n);
+    if (n == 0){
+      Serial.println("0 bytes => fail, breaking");
+      break;
+    }
     unsigned long newTimestamp = micros();
-    total_micros += newTimestamp - beforeSendT;
+    writing_micros += newTimestamp - beforeSendT;
 
     //Serial.println(n);
     sentBytes += n;
@@ -122,7 +133,7 @@ void loop(){
 
   unsigned long elapsedTime = endTime - startTime;
   Serial.print("fraction spent writing: ");
-  Serial.println(total_micros/1000.0/elapsedTime);
+  Serial.println(writing_micros/1000.0/elapsedTime);
 
   float rate = (float)sentBytes / elapsedTime * 1000.0 / 1000.0; // calculate the upload rate in KB/s
   Serial.print("Sent ");

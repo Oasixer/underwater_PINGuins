@@ -37,22 +37,25 @@ void setup() {
 
   adc->adc0->enableInterrupts(adc_isr);
 
-  Serial.println("Timers started");
+  if (startTimerValue == false) {
+    Serial.println("Timer setup failed");
+  }
+  else{
+    Serial.println("Timers started");
+  }
+
+  TmpData tmpData;
 
   delay(500);
 }
 
 void loop() {
 
-  if (startTimerValue == false) {
-    Serial.println("Timer setup failed");
-  }
-
-  if (micros() - last_micros_printed >= 1000000){
-    Serial.printf("ISR was called %i times, latest value %i\n", (uint32_t)num_times_isr_called, latest_adc_value);
-    num_times_isr_called = 0;
-    last_micros_printed = micros();
-  }
+  // if (micros() - last_micros_printed >= 1000000){
+  //   Serial.printf("ISR was called %i times, latest value %i\n", (uint32_t)num_times_isr_called, latest_adc_value);
+  //   num_times_isr_called = 0;
+  //   last_micros_printed = micros();
+  // }
 }
 
 // This function will be called with the desired frequency

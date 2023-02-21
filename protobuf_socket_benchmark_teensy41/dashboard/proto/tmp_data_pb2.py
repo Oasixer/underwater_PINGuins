@@ -15,12 +15,11 @@ _sym_db = _symbol_database.Default()
 
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x14proto/tmp_data.proto\"\x17\n\x07TmpData\x12\x0c\n\x04\x64\x61ta\x18\x01 \x03(\rb\x06proto3')
 
-_globals = globals()
-_builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'proto.tmp_data_pb2', _globals)
+_builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, globals())
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'proto.tmp_data_pb2', globals())
 if _descriptor._USE_C_DESCRIPTORS == False:
 
   DESCRIPTOR._options = None
-  _globals['_TMPDATA']._serialized_start=24
-  _globals['_TMPDATA']._serialized_end=47
+  _TMPDATA._serialized_start=24
+  _TMPDATA._serialized_end=47
 # @@protoc_insertion_point(module_scope)
