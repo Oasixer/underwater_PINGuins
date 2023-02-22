@@ -5,9 +5,15 @@ use std::io::{BufWriter, Read, Write};
 use std::time::{Duration, SystemTime};
 use std::io::stdin;
 use std::sync::mpsc::{channel, Receiver};
+use std::fs;
+
 
 fn main() {
-    let host = "192.168.1.70";
+    // let host = "192.168.1.70";
+    let host = fs::read_to_string("./this_host_ip")
+        .expect("Failed to read file")
+        .trim()
+        .to_owned();
     let port = 6969;
     let message_size = 800;
     let mut buffer = [0u8; 1024];
@@ -48,7 +54,7 @@ fn main() {
 
         // If conn is not yet set, try to connect
         if conn.is_none() {
-            match std::net::TcpListener::bind((host, port)) {
+            match std::net::TcpListener::bind((host.clone(), port)) {
                 Ok(listener) => {
                     println!("listening");
                     for stream in listener.incoming() {
