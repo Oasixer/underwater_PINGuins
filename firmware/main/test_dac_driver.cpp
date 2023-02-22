@@ -5,15 +5,9 @@ uint32_t n_times_wrote_dac_driver = 0;
 uint64_t dac_driver_start_time = 0;
 
 void test_dac_driver_setup(){
-    pinMode(TEST_LED, OUTPUT);
-    pinMode(DAC_CLR, OUTPUT);
-    dac_setup(DAC_PIN, DAC_CLR);
+    dac_setup(DAC_PIN, DAC_CLR, HV_ENABLE);
 
-    dac_set_analog(DAC_CENTER - DAC_AMPLITUDE);
-    delay(1);  // delay to ensure dac set to correct value
-    pinMode(RELAY_ENABLE, OUTPUT);
-    digitalWrite(RELAY_ENABLE, HIGH);
-    delay(3);  // delay to ensure relay switched
+    pinMode(0, OUTPUT);
 
     Serial.begin(9600);
 }
@@ -23,7 +17,13 @@ void test_dac_driver_loop(){
         dac_driver_start_time = micros();
     }
    if (micros() - dac_driver_start_time < 1000000){
-      dac_set_analog_float(sinf(2 * M_PI * FREQ  / 1000000 * (float)(micros() % (1000000 / FREQ))));
+      float val = sinf(2 * M_PI * FREQ  / 1000000 * (float)(micros() % (1000000 / FREQ)));
+      dac_set_analog_float(val);
+      if (val < 0){
+        digitalWrite(0, HIGH);
+      } else{
+        digitalWrite(0, LOW);
+      }
       ++n_times_wrote_dac_driver;
    } else {
       Serial.printf("I ran at %i Hz\n", n_times_wrote_dac_driver);
