@@ -50,7 +50,7 @@ static uint16_t FREQUENCIES[N_FREQUENCIES] = {
 #define MSG_LENGTH 50  // bits
 
 /* constants for DAC */
-#define DAC_AMPLITUDE 4500
+#define DAC_AMPLITUDE 3600
 #define DAC_CENTER 11715
 
 #endif

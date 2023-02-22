@@ -4,6 +4,7 @@
 #include "dac_driver.h"
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <math.h>
 
 void sender_main_setup();

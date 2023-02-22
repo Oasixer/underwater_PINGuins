@@ -23,15 +23,14 @@ void dac_setup(int chip_select_pin, int clr_pin, int hv_enable){
     
     // safely set high voltage enable pin to high
     dac_set_analog(DAC_CENTER - DAC_AMPLITUDE);
-    // delay(1);  // delay to ensure dac set to correct value
-    // pinMode(hv_enable_pin, OUTPUT);
-    // // digitalWrite(hv_enable_pin, HIGH);
-    // delay(3);  // delay to high voltage enabled
+    delay(1);  // delay to ensure dac set to correct value
+    pinMode(hv_enable_pin, OUTPUT);
+    digitalWrite(hv_enable_pin, HIGH);
+    delay(3);  // delay to high voltage enabled
 }
 
 void dac_set_analog(uint16_t value){
     // Sets the dac output to value. value should be 14 bits (the 2 most significant bits are ignored)
-    Serial.println(value);
     digitalWrite(dac_pin, LOW);  // take the \bar{CS} low
     SPI.transfer((uint8_t)(value>>6));  // transfer the most significant 8 bits
     SPI.transfer((uint8_t)(value<<2));  // transfer the least significant 6 bits and 2 bits set to zero
