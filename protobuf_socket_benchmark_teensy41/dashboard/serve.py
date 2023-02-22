@@ -26,7 +26,8 @@ while True:
                         print(f"Client {addr} has disconnected")
                         break
                     # Process the data
-                    print(len(data))
+                    print(data)
+                    # print(len(data))
                 except:
                     # Client has disconnected
                     print(f"Client {addr} has disconnected")
