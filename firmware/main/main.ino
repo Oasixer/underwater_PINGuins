@@ -1,10 +1,9 @@
-#include "test_dac_driver.h"
+#include "sender_main.h"
 
 void setup() {
-    Serial.begin(9600);
-    test_dac_driver_setup();
+    sender_main_setup();
 }
 
 void loop() {
-  test_dac_driver_loop();
+    sender_main_loop();
 }

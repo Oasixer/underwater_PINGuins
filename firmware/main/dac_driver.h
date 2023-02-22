@@ -7,7 +7,7 @@
 
 #include "constants.h"
 
-void dac_setup(int chip_select_pin, int clr_pin);
+void dac_setup(int chip_select_pin, int clr_pin, int hv_enable);
 void dac_set_analog(uint16_t value);
 void dac_set_analog_float(float value);
 

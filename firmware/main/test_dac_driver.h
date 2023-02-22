@@ -10,8 +10,8 @@
 
 #define DAC_PIN 40
 #define DAC_CLR 39
-
-#define RELAY_ENABLE 18
+#define HV_ENABLE_PIN 18
+#define RELAY_PIN 25
 
 #define FREQ 10000
 

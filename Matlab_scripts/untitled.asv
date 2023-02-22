@@ -1,0 +1,12 @@
+function plotFreqsOfInterest(signal, N, fs, freqsOfInterest)
+% signal: the input signal as a vector
+% N: the size of the sliding window (in samples)
+% fs: the sampling rate of the signal
+% freqsOfInterst: the frequencies to plot the data at
+
+dftData = zeros(length(freqsOfInterest), length(signal));
+for f = 1:length(freqsOfInterest)
+    dftData(f) = slidingDFTatFreq(data, N, fs, freqsOfInterest(f));
+end
+
+end
