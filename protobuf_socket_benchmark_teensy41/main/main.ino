@@ -13,7 +13,7 @@ byte mac[] = {0x0, 0x00, 0x00, 0x00, 0x00, 0x00};
 //IPAddress server(74,125,232,128);  // numeric IP for Google (no DNS)
 //char server[] = "www.google.com";    // name address for Google (using DNS)
 
-IPAddress serverIp(192, 168, 1, 70); //IP address target
+IPAddress server_ip(192, 168, 1, 70); //IP address target
 
 // Set the static IP address to use if the DHCP fails to assign
 IPAddress ip(192, 168, 0, 177);
@@ -73,7 +73,7 @@ void setup() {
   // give the Ethernet shield a second to initialize:
   delay(1000);
   Serial.print("connecting to ");
-  Serial.print(serverIp);
+  Serial.print(server_ip);
   Serial.println("...");
   
 }
@@ -81,7 +81,7 @@ void setup() {
 void loop(){
   // if you get a connection, report back via serial:
   // if (client.connect(server, 80)) {
-  if (client.connect(serverIp, 6969)) {
+  if (client.connect(server_ip, 6969)) {
     Serial.print("connected to ");
     Serial.println(client.remoteIP());
   } else {
