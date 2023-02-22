@@ -4,7 +4,7 @@
 #define DAC_PIN 40
 #define DAC_CLR_PIN 39
 #define HV_ENABLE_PIN 18
-#define RELAY 25
+#define RELAY_PIN 25
 #define NO_LEAK_PIN 14
 
 // Define the message format
@@ -27,8 +27,8 @@ void sender_main_setup(){
         dac_setup(DAC_PIN, DAC_CLR_PIN, HV_ENABLE_PIN);
 
         // switch relay to talk mode
-        pinMode(RELAY, OUTPUT);
-        digitalWrite(RELAY, HIGH);
+        pinMode(RELAY_PIN, OUTPUT);
+        digitalWrite(RELAY_PIN, HIGH);
     }
 
     Serial.begin(9600);
@@ -40,7 +40,7 @@ void sender_main_loop() {
     if (!no_leak){  // oh shit, there's a leak
         while (true){
             digitalWrite(HV_ENABLE_PIN, LOW);  // turn off high voltage
-            digitalWrite(RELAY, LOW);  // switch to receive mode
+            digitalWrite(RELAY_PIN, LOW);  // switch to receive mode
             Serial.println("LEAK DETECTED");
         }
     } else {  // no leak

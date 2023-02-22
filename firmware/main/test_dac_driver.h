@@ -10,10 +10,10 @@
 
 #define DAC_PIN 40
 #define DAC_CLR 39
+#define HV_ENABLE_PIN 18
+#define RELAY_PIN 25
 
-#define HV_ENABLE 18
-
-#define FREQ 100
+#define FREQ 10000
 
 void test_dac_driver_setup();
 void test_dac_driver_loop();
