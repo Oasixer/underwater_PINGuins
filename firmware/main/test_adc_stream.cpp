@@ -9,7 +9,9 @@
 #define PRINT_MSG_OVERRUN 1           // uncomment to print info when msg overrun detected
 // #define DISCONNECT_MSG_OVERRUN 1   // uncomment to disconnect on msg overrun
 
-IPAddress server_ip(192, 168, 1, 70); //IP address target
+IPAddress server_ip_k(192, 168, 1, 70); //IP address target
+IPAddress server_ip_a(192, 168, 1, 123); //IP address target
+IPAddress* server_ip_try = &server_ip_k;
 #define SERVER_PORT 6969
 
 IPAddress ip(192, 168, 0, 177); // Set the static IP address to use if the DHCP fails to assign
@@ -144,17 +146,22 @@ bool test_adc_stream_loop(bool connection_active){
         return true;
     }
     if (!connection_active || !client.connected()){
+        if (server_ip_try == &server_ip_a){
+            server_ip_try = &server_ip_k;
+        } else {
+            server_ip_try = &server_ip_a;
+        }
         Serial.print("connecting to ");
-        Serial.print(server_ip);
+        Serial.print(*server_ip_try);
         Serial.println("...");
-        if (client.connect(server_ip, SERVER_PORT)) {
+        if (client.connect(*server_ip_try, SERVER_PORT)) {
             Serial.print("connected to ");
             Serial.println(client.remoteIP());
             measureSpeedFromMsg = curMsgBeingSent;
             connection_timestamp = millis();
         } else {
             Serial.println("Server connection failed, though ethernet connection probably fine?");
-            delay(5000);
+            delay(1000);
             Serial.println("Retrying connection...");
             return false;
         }

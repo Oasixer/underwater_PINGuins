@@ -9,3 +9,5 @@ venv/
 */*.gif
 *.exe
 */*.avi
+
+adc_recordings/

@@ -20,17 +20,32 @@ fn main() {
     let mut conn: Option<std::net::TcpStream> = None;
     let mut file: Option<BufWriter<std::fs::File>> = None;
     let mut end_time: Option<SystemTime> = None;
-    let mut file_path = String::new();
+    let mut file_path;
     let mut n_secs = 1;
 
     let stdin_channel = spawn_stdin_channel();
+    let adc_rec_dir_path = "../adc_recordings";
+    if let Err(e) = fs::metadata(&adc_rec_dir_path) {
+        if e.kind() == std::io::ErrorKind::NotFound {
+            // The directory does not exist, so create it
+            match fs::create_dir(&adc_rec_dir_path) {
+                Ok(()) => println!("Directory created: {}", adc_rec_dir_path),
+                Err(e) => eprintln!("Error creating directory: {}", e),
+            }
+        } else {
+            eprintln!("Error checking directory: {}", e);
+        }
+    } else {
+        // The directory exists
+        println!("Found adc_recordings dir: {}", adc_rec_dir_path);
+    }
 
     loop {
         match stdin_channel.try_recv() {
             Ok(input) => {
                 let tokens: Vec<&str> = input.trim().split_whitespace().collect();
-                if tokens.len() == 3 && tokens[0] == "write_me" {
-                    file_path = String::from(tokens[1]);
+                if tokens.len() == 3 && tokens[0] == "w" {
+                    file_path = format!("{}/{}", adc_rec_dir_path, String::from(tokens[1]));
                     n_secs = tokens[2].parse().unwrap();
                     if let Ok(f) = OpenOptions::new().create(true).write(true).open(&file_path) {
                         file = Some(BufWriter::new(f));
@@ -48,6 +63,7 @@ fn main() {
             if SystemTime::now() > et {
                 end_time = None;
                 file = None;
+                println!("Finished recording");
                 file_path = String::new();
             }
         }
@@ -56,7 +72,8 @@ fn main() {
         if conn.is_none() {
             match std::net::TcpListener::bind((host.clone(), port)) {
                 Ok(listener) => {
-                    println!("listening");
+                    println!("Connected. wait for inevitable couple of buffer overruns during catchup, then type:");
+                    println!("w <filename> <record_duration_seconds>");
                     for stream in listener.incoming() {
                         match stream {
                             Ok(c) => {
@@ -87,7 +104,7 @@ fn main() {
                 Ok(size) => {
                     let message_count = size / message_size;
                     // if (message_count > 1){
-                    println!("msg count: {}", message_count);
+                    // println!("msg count: {}", message_count);
                     // }
                     for i in 0..message_count {
                         let start = i * message_size;
@@ -143,7 +160,7 @@ fn spawn_stdin_channel() -> Receiver<String> {
     rx
 }
 
-fn sleep(millis: u64) {
-    let duration = Duration::from_millis(millis);
-    thread::sleep(duration);
-}
+// fn sleep(millis: u64) {
+//     let duration = Duration::from_millis(millis);
+//     thread::sleep(duration);
+// }
