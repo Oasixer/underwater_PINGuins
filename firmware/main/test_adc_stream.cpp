@@ -10,7 +10,7 @@
 // #define DISCONNECT_MSG_OVERRUN 1   // uncomment to disconnect on msg overrun
 
 IPAddress server_ip_k(192, 168, 1, 70); //IP address target
-IPAddress server_ip_a(192, 168, 1, 123); //IP address target
+IPAddress server_ip_a(192, 168, 1, 69); //IP address target
 IPAddress* server_ip_try = &server_ip_k;
 #define SERVER_PORT 6969
 
@@ -53,7 +53,7 @@ void test_adc_stream_setup(){
     teensyMAC(mac);
 
     // start the Ethernet connection:
-    Serial.println("Initialize Ethernet with DHCP:");
+    Serial.println("Initialize Ethernet with DHCP. [If this is the last output, teensy's ethernet prob unplugged]");
     if (Ethernet.begin(mac) == 0) {
     Serial.println("Failed to configure Ethernet using DHCP");
     // Check for Ethernet hardware present
