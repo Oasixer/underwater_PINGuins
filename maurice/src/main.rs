@@ -170,7 +170,7 @@ fn main() {
         match stdin_channel.try_recv() {
             Ok(input) => {
                 let tokens: Vec<&str> = input.trim().split_whitespace().collect();
-                println!("received input: {}, len {}", input.trim(), tokens.len());
+                // println!("received input: {}, len {}", input.trim(), tokens.len());
                 let mut skip: bool = false;
                 match tokens.len() {
                     1 => {
@@ -181,6 +181,7 @@ fn main() {
                         file_path = match tokens[0] {
                             "n" => {
                                 skip = true;
+                                println!("\nSet prefix to {}", tokens[1]);
                                 format!("{}/{}_0", adc_rec_dir_path, String::from(tokens[1]))
                             },
                             "w" => {
@@ -232,6 +233,8 @@ fn main() {
                     } else {
                         panic!("Failed to open file!");
                     }
+                    println!("\nBegin recording to file {} for {} seconds", file_path, n_secs);
+                    audioplayer_tx.send(SoundEffect::StartRecording).unwrap();
                     end_time = Some(SystemTime::now() + Duration::from_secs(n_secs));
                 }
             },
@@ -243,7 +246,7 @@ fn main() {
             if SystemTime::now() > et {
                 end_time = None;
                 // let file_metadata = file.as_ref().unwrap().get_ref().metadata().unwrap();
-                println!("Finished recording to {}, wrote {} bytes = {} kB => {} kB/s", file_path, file_bytes_written, file_bytes_written as f64/1000.0, file_bytes_written as f64 / n_secs as f64 / 1000.0);
+                println!("Finished recording to {}, wrote {} bytes @ {} [kB/s]", file_path, file_bytes_written, file_bytes_written as f64 / n_secs as f64 / 1000.0);
                 file = None;
                 file_bytes_written = 0;
                 audioplayer_tx.send(SoundEffect::EndRecording).unwrap();
@@ -262,7 +265,7 @@ fn main() {
                             Ok(c) => {
                                 conn = Some(c);
                                 println!("");
-                                println!("======= PINGUIN CONNECTED @{} ==========", conn.as_ref().unwrap().peer_addr().unwrap());
+                                println!("=============== PINGUIN CONNECTED {} ================", conn.as_ref().unwrap().peer_addr().unwrap());
                                 println!("Commands:");
                                 println!("v <up || down>                       (increase or decrease volume)");
                                 println!("w <filename> <record_n_seconds>      (record to filename for n seconds)");
@@ -342,7 +345,7 @@ fn main() {
                 Err(e) => {
                     match e.kind() {
                         ErrorKind::TimedOut => {
-                            println!("\nPINGUIN @{} DISCONNECTED  [  TIMED OUT AFTER {}ms  ])\n     :'(\n", conn.as_ref().unwrap().peer_addr().as_ref().unwrap(), TIMEOUT_READ_MS);
+                            println!("\nPINGUIN @{} DISCONNECTED  [ TIMED OUT AFTER {}ms ]\n   :'(\n", conn.as_ref().unwrap().peer_addr().as_ref().unwrap(), TIMEOUT_READ_MS);
                         },
                         _ => {
                             println!("PINGUIN @{} DISCONNECTED (due to ERROR={})\n     :'(\n", conn.as_ref().unwrap().peer_addr().as_ref().unwrap(), e);
