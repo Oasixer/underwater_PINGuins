@@ -5,7 +5,7 @@ use std::fs::OpenOptions;
 use std::io::{BufWriter, Read, Write};
 use std::time::{Duration, SystemTime};
 use std::io::stdin;
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
 use std::fs;
 use std::io::BufReader;
 // use rodio::{Decoder, OutputStream, Sink};
@@ -18,6 +18,10 @@ use rodio::{Decoder, OutputStream, Sink};
 // DONT CRASH ON INVALID TOKEN[0]
 // repeat on .
 // increase click volume
+
+
+// actually set source IP lol dummy
+// ... well we both had connections from 192.168.1.68 at the same time, so whatever that means
 
 // Contains needed traits
 // extern crate enum_index;
@@ -155,6 +159,8 @@ fn main() {
     let mut n_secs = 1;
     let mut msg_read_num: u64 = 0;
     let mut volume: f32 = 0.6;
+    let mut last_succesful_command: String = String::new();
+    let mut repeat_commant: bool = false;
 
     let stdin_channel = spawn_stdin_channel();
     let adc_rec_dir_path = "../adc_recordings";
@@ -174,22 +180,37 @@ fn main() {
     }
 
     loop {
-        match stdin_channel.try_recv() {
+        let str: Result<String, TryRecvError>;
+        if (repeat_commant){
+            str = Ok(last_succesful_command.clone());
+            // println!("setting tokens to prev tokens");
+        }
+        else{
+            str = stdin_channel.try_recv();
+        }
+        match str {
             Ok(input) => {
                 let tokens: Vec<&str> = input.trim().split_whitespace().collect();
-                // println!("received input: {}, len {}", input.trim(), tokens.len());
                 let mut skip: bool = false;
+                repeat_commant = false;
                 match tokens.len() {
                     1 => {
                         // println!("invalid command length, must be 2 or 3");
-                        if tokens[0] == "n"{
-                            println!("Received empty 'n' => Reset file_path / prefix. Waiting for next command.");
-                            file_path = "".to_string();
-                            skip = true;
-                        }
-                        else{
-                            println!("Invalid 1 token command. Continuing.");
-                            skip = true;
+                        match tokens[0] {
+                            "n" => {
+                                println!("Received empty 'n' => Reset file_path / prefix. Waiting for next command.");
+                                file_path = "".to_string();
+                                skip = true;
+                            }
+                            "." => {
+                                println!("repeating <{}>", last_succesful_command.trim());
+                                repeat_commant = true;
+                                skip = true;
+                            }
+                            _ => {
+                                println!("Invalid 1 token command. Continuing.");
+                                skip = true;
+                            }
                         }
                     }
                     2 => {
@@ -263,6 +284,9 @@ fn main() {
                             // println!("resetting prefix if you had one...");
                         // file_path = "".to_string()}
                     }
+                }
+                if (!repeat_commant){
+                    last_succesful_command = input;
                 }
                 if !skip && file_path.len() > 0 {
                     // Open file for writing
