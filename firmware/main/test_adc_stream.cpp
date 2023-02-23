@@ -161,7 +161,7 @@ bool test_adc_stream_loop(bool connection_active){
             connection_timestamp = millis();
         } else {
             Serial.println("Server connection failed, though ethernet connection probably fine?");
-            delay(1000);
+            delay(200);
             Serial.println("Retrying connection...");
             return false;
         }
