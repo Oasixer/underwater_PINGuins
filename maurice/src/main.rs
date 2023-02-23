@@ -14,6 +14,11 @@ use std::io::Cursor;
 use std::io::ErrorKind;
 use rodio::{Decoder, OutputStream, Sink};
 
+
+// DONT CRASH ON INVALID TOKEN[0]
+// repeat on .
+// increase click volume
+
 // Contains needed traits
 // extern crate enum_index;
 // Contains derives
@@ -32,7 +37,7 @@ use strum_macros::{EnumIter, Display};
 const MSG_SIZE_BYTES: usize = 800;
 const MSG_SOUND_EVERY_N_BYTES: u64 = 1000 * 1000;
 const MSG_SOUND_EVERY_N_MSGS: u64 = MSG_SOUND_EVERY_N_BYTES / MSG_SIZE_BYTES as u64;
-const TIMEOUT_READ_MS: u64 = 200;
+const TIMEOUT_READ_MS: u64 = 400;
 
 #[derive(EnumIter, Debug, PartialEq, Eq, Display, Hash)]
 enum SoundEffect {
@@ -116,6 +121,8 @@ fn main() {
                     sink.append(source);
                     sink.play();
 
+                    sink.sleep_until_end();
+
                     if (sound_effect == SoundEffect::IncreaseVolume){
                         let new_volume = sink.volume() + VOLUME_INCREMENT;
                         if new_volume <= VOLUME_MAX {
@@ -174,8 +181,16 @@ fn main() {
                 let mut skip: bool = false;
                 match tokens.len() {
                     1 => {
-                        println!("invalid command length, must be 2 or 3");
-                        continue;
+                        // println!("invalid command length, must be 2 or 3");
+                        if tokens[0] == "n"{
+                            println!("Received empty 'n' => Reset file_path / prefix. Waiting for next command.");
+                            file_path = "".to_string();
+                            skip = true;
+                        }
+                        else{
+                            println!("Invalid 1 token command. Continuing.");
+                            skip = true;
+                        }
                     }
                     2 => {
                         file_path = match tokens[0] {
@@ -197,10 +212,22 @@ fn main() {
                                         }
                                         let prefix: String = split.join("_");
                                         let n = n_str.parse::<u32>().expect("file ended in _xxx but xxx was not a number");
-                                        n_secs = tokens[1].parse().expect("w command <seconds> token was not a number");
+                                        match tokens[1].parse() {
+                                            Ok(n) => {
+                                                n_secs = n;
+                                            }
+                                            Err(_) => {
+                                                println!("Failed to parse {} in w <n> command, expected int. Ignoring.", tokens[1]);
+                                                skip = true;
+                                            }
+                                        }
                                         format!("{}_{}",prefix, n+1)
                                     }
-                                    None => panic!("2 tokens in 'w' command, yet 'n' command not previously issued")
+                                    None => {
+                                        println!("2 tokens in 'w' command, yet 'n' command not previously issued. Ignoring.");
+                                        skip = true;
+                                        file_path // keep old file_path
+                                    }
                                 }
                             }
                             "v" => {
@@ -212,19 +239,30 @@ fn main() {
                                 }
                                 file_path // keep old file_path
                             }
-                            _ => panic!("invalid token[0]: {}", tokens[0])
+                            _ => {
+                                println!("invalid token[0]:");
+                                skip = true;
+                                file_path
+                                // "".to_string()
+                            }
                         }
                     }
                     3 => {
                         if tokens[0] != "w" {
                             println!("invalid command: {}", tokens[0]);
+                            skip = true;
                         }
                         else{
                             file_path = format!("{}/{}", adc_rec_dir_path, String::from(tokens[1]));
                             n_secs = tokens[2].parse().expect("w command <seconds> token was not a number");
                         }
                     }
-                    _ => {println!("invalid command length, must be 2 or 3")}
+                    _ => {
+                        println!("invalid command length, must be 2 or 3. ignoring.");
+                        skip = true;
+                            // println!("resetting prefix if you had one...");
+                        // file_path = "".to_string()}
+                    }
                 }
                 if !skip && file_path.len() > 0 {
                     // Open file for writing
@@ -236,6 +274,9 @@ fn main() {
                     println!("\nBegin recording to file {} for {} seconds", file_path, n_secs);
                     audioplayer_tx.send(SoundEffect::StartRecording).unwrap();
                     end_time = Some(SystemTime::now() + Duration::from_secs(n_secs));
+                }
+                else{
+                    file = None;
                 }
             },
             Err(_) => {},
@@ -319,14 +360,15 @@ fn main() {
                         match message[0] >> 4 {
                             0b1111 => {
                                 // print first 5 bytes of message
-                                println!("Leak detected!");
-                                for i in 0..100 {
-                                    println!("byte{}: {:02x}, >>4: {}", i,  message[i], message[i] >> 4);
-                                }
+                                // println!("Leak detected!");
+                                // for i in 0..100 {
+                                //     println!("byte{}: {:02x}, >>4: {}", i,  message[i], message[i] >> 4);
+                                // }
                                 println!("LEAK DETECTED!!!!!!!!!!");
                                 audioplayer_tx.send(SoundEffect::Leak).unwrap();
 
-                                panic!("Leak detected!");
+                                // sleep(2000);
+                                // panic!("Leak detected!");
                                 // println!("msg: {}", message);
                             }
                             0b0101 => {
@@ -370,7 +412,7 @@ fn spawn_stdin_channel() -> Receiver<String> {
     rx
 }
 
-// fn sleep(millis: u64) {
-//     let duration = Duration::from_millis(millis);
-//     thread::sleep(duration);
-// }
+fn sleep(millis: u64) {
+    let duration = Duration::from_millis(millis);
+    thread::sleep(duration);
+}
