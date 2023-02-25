@@ -41,7 +41,7 @@ static uint16_t FREQUENCIES[N_FREQUENCIES] = {
 };
 
 
-#define INACTIVE_DURATION_AFTER_BEEP 17500
+#define INACTIVE_DURATION_AFTER_BEEP 195000
 #define INACTIVE_DURATION_BEFORE_TALKING 200000
 
 /* constants for message */
@@ -49,6 +49,7 @@ static uint16_t FREQUENCIES[N_FREQUENCIES] = {
 
 /* constants for DAC */
 #define DAC_AMPLITUDE 3600  // this results in full 60V range
+#define DAC_AMPLITUDE 500
 #define DAC_CENTER 11715
 
 /* constants on the board*/
@@ -65,5 +66,12 @@ static uint16_t FREQUENCIES[N_FREQUENCIES] = {
 /* constants for relay*/
 #define RELAY_SEND_MODE HIGH
 #define RELAY_RECEIVE_MODE LOW
+
+/* constants for serial message indicators*/
+static const char message_delimiter = ' ';
+static const char message_terminator = '\n';
+
+/* constants for saving trip duration*/
+#define MAX_N_TRIPS 500
 
 #endif
