@@ -13,15 +13,15 @@ for f = 1:length(freqsOfInterest)
     dftData(f, :) = slidingDFTatFreq(signal, N, fs, freqsOfInterest(f));
 end
 
-%% plot all freqsOfInterest on the same graph
-figure
-for f = 1:length(freqsOfInterest)
-    plot(t, dftData(f, :), 'DisplayName', num2str(freqsOfInterest(f)) + "Hz"); hold on;
-end
-legend();
-xlabel("Time [s]");
-ylabel("Freq amplitude");
-title("Freqs of interest over time");
+% %% plot all freqsOfInterest on the same graph
+% figure
+% for f = 1:length(freqsOfInterest)
+%     plot(t, dftData(f, :), 'DisplayName', num2str(freqsOfInterest(f)) + "Hz"); hold on;
+% end
+% legend();
+% xlabel("Time [s]");
+% ylabel("Freq amplitude");
+% title("Freqs of interest over time");
 
 %% plot each of freqsOfInterest on its own 
 figure
