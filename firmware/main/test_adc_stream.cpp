@@ -10,7 +10,7 @@
 // #define DISCONNECT_MSG_OVERRUN 1   // uncomment to disconnect on msg overrun
 
 IPAddress server_ip_k(192, 168, 1, 70); //IP address target
-IPAddress server_ip_a(192, 168, 1, 69); //IP address target
+IPAddress server_ip_a(192, 168, 1, 123); //IP address target
 IPAddress* server_ip_try = &server_ip_k;
 #define SERVER_PORT 6969
 
@@ -19,6 +19,8 @@ IPAddress myDns(192, 168, 0, 1);
 // teensy MAC address. Initialize to zero, as it gets set in teensyMAC automatically.
 byte mac[] = {0x0, 0x00, 0x00, 0x00, 0x00, 0x00};
 EthernetClient client;
+
+
 
 const int readPeriodMicros = 2; // us
 
@@ -51,6 +53,10 @@ void test_adc_stream_setup(){
     pinMode(readPin, INPUT_DISABLE);
     delay(1000);
     teensyMAC(mac);
+
+    Ethernet.setStackHeap(1024 * 128);
+    Ethernet.setSocketSize(1576 * 8);
+
 
     // start the Ethernet connection:
     Serial.println("Initialize Ethernet with DHCP. [If this is the last output, teensy's ethernet prob unplugged]");
@@ -145,12 +151,19 @@ bool test_adc_stream_loop(bool connection_active){
         }
         return true;
     }
-    if (!connection_active || !client.connected()){
-        if (server_ip_try == &server_ip_a){
-            server_ip_try = &server_ip_k;
-        } else {
-            server_ip_try = &server_ip_a;
+    if (!client.connected()){
+        // if (server_ip_try == &server_ip_a){
+        //     server_ip_try = &server_ip_k;
+        // } else {
+        //     server_ip_try = &server_ip_a;
+        // }
+        server_ip_try = &server_ip_k;
+
+        // if (!ethernee)
+        if (Ethernet.linkStatus() == LinkOFF) {
+            Serial.println("ETHERNET FUCKY WUCKY WITHIN??");
         }
+
         Serial.print("connecting to ");
         Serial.print(*server_ip_try);
         Serial.println("...");
@@ -199,9 +212,12 @@ bool test_adc_stream_loop(bool connection_active){
             // curMsgBeingSent = (curMsgBeingCreated - MSGS_IN_BUF + 2);
             return true;
         }
+        #define DOUBLE_SPD 2
         if (curMsgBeingSent % MEASURE_SPEED_EVERY_N_MSGS == 0 && curMsgBeingSent-1 > measureSpeedFromMsg){
+            Serial.print("free: ");
+            // Serial.println(client.free());
             const uint64_t elapsed = millis() - connection_timestamp;
-            const uint16_t sentMsgs = curMsgBeingSent - 1 - measureSpeedFromMsg;
+            const uint16_t sentMsgs = (curMsgBeingSent - 1 - measureSpeedFromMsg) * DOUBLE_SPD;
             float rate_kilobyte_per_s = sentMsgs * BYTES_PER_MSG / elapsed;
             Serial.print("Sent ");
             Serial.print(sentMsgs);
@@ -220,6 +236,10 @@ bool test_adc_stream_loop(bool connection_active){
         
         const uint16_t n = client.write(&msg_buf[byte_offset], BYTES_PER_MSG); // takes 0-2 ms
         if (!check_bytes(n, client)){
+            return false;
+        }
+        const uint16_t n2 = client.write(&msg_buf[byte_offset], BYTES_PER_MSG); // takes 0-2 ms
+        if (!check_bytes(n2, client)){
             return false;
         }
 

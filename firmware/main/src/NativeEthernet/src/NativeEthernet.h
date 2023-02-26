@@ -226,6 +226,10 @@ public:
 	// Number of bytes remaining in the current packet
 	virtual int available();
 	// Read a single byte from the current packet
+
+	virtual int free(); // Return the number of bytes available in buf
+
+
 	virtual int read();
 	// Read up to len bytes from the current packet and place them into buffer
 	// Returns the number of bytes read, or 0 if none are available
