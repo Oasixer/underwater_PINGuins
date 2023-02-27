@@ -5,6 +5,8 @@
 
 /* Define constants for DFT*/
 #define F_SAMPLE 500000  // Hz
+#define ADC_PERIOD 2
+#define MAX_SZ_WINDOW 1250  // Samples
 
 #define N_STATIONARY 3  // number of stationary nodes
 #define N_ALL_NODES 4  // number of all nodes (N_STATIONARY + 1)
@@ -38,19 +40,38 @@ static uint16_t FREQUENCIES[N_FREQUENCIES] = {
         F_ALL,
 };
 
-#define DFT_THRESHOLD 0.005
 
-#define INACTIVE_DURATION_AFTER_PEAK 17500
-#define MICRO_SECONDS_TO_FIND_PEAK 5000  // TODO: CHECK
-#define MICRO_SECONDS_BETWEEN_RECEIVE_AND_PEAK 2500
-#define MICRO_SECONDS_SEND_DURATION 2500
-#define INACTIVE_DURATION_AFTER_BEEP 17500
+#define INACTIVE_DURATION_AFTER_BEEP 195000
+#define INACTIVE_DURATION_BEFORE_TALKING 200000
 
 /* constants for message */
 #define MSG_LENGTH 50  // bits
 
 /* constants for DAC */
-#define DAC_AMPLITUDE 3600
+#define DAC_AMPLITUDE 3600  // this results in full 60V range
+#define DAC_AMPLITUDE 500
 #define DAC_CENTER 11715
+
+/* constants on the board*/
+#define DAC_PIN 40
+#define DAC_CLR_PIN 39
+#define HV_ENABLE_PIN 18
+#define PIEZO_IN_PIN 41
+#define NO_LEAK_PIN 14
+#define RELAY_PIN 25
+
+/* constants for leak detection*/
+#define THERE_IS_A_LEAK false
+
+/* constants for relay*/
+#define RELAY_SEND_MODE HIGH
+#define RELAY_RECEIVE_MODE LOW
+
+/* constants for serial message indicators*/
+static const char message_delimiter = ' ';
+static const char message_terminator = '\n';
+
+/* constants for saving trip duration*/
+#define MAX_N_TRIPS 500
 
 #endif

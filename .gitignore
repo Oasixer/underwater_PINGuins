@@ -7,6 +7,8 @@ venv/
 /__pycache__/
 
 */*.gif
+*.exe
+*/*.avi
 
 adc_recordings/
 data_stream/**/*

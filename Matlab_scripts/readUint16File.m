@@ -6,7 +6,9 @@ function data = readUint16File(filename)
 fileID = fopen(filename, 'r');
 
 % Read the data as a column vector of uint16 values
-data = fread(fileID, Inf, 'uint16');
+data = fread(fileID, Inf, 'uint16', 'ieee-be');
+
+data = uint16(data);
 
 % Close the file
 fclose(fileID);

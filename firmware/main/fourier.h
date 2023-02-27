@@ -7,12 +7,9 @@
 
 #include "complex_type.h"
 #include "constants.h"
-#include "ring_buffer.h"
 
-#define SZ_WINDOW 1250  // Samples
-
-void fourier_initialize();
-void fourier_update(float *amplitudes, uint16_t new_sample);
+void fourier_initialize(uint16_t N);
+void fourier_update(float *magnitudes, uint16_t new_sample);
 
 void fourier_print_ring_buffer();
 void test_fourier_speed_main();

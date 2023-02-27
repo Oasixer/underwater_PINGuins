@@ -25,7 +25,7 @@ bool is_freq_id_for_stationary_node(uint8_t id){
     return id == IDX_F_STATIONARY_1 || id == IDX_F_STATIONARY_2 || id == IDX_F_STATIONARY_3;
 }
 
-void detect_frequencies() {
+void stationary_detect_frequencies() {
     for (uint8_t i = 0; i < N_FREQUENCIES; ++i) {
         if (freq_amplitudes[i] > DFT_THRESHOLD) {
             prev_max_amplitude = freq_amplitudes[i];
@@ -75,7 +75,7 @@ void receive_mode_hb(){
         if (is_peak_finding) {
             peak_finding();
         } else {
-            detect_frequencies();
+            stationary_detect_frequencies();
         }
         is_fourier_updated = false;  // indicate that already processed the latest sample
     }
