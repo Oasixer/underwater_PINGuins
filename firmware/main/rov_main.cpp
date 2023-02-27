@@ -6,7 +6,7 @@
 #include "relay.h"
 #include "fourier.h"
 #include "printing.h"
-#include "TcpClient.h"
+#include "tcp_client.h"
 
 #include <Arduino.h>
 #include <stdint.h>
@@ -46,7 +46,7 @@ uint64_t trip_times[MAX_N_TRIPS] = {0};
 uint16_t n_talks_done = 0;
 uint16_t n_talks_command = 0;
 
-void rov_main_setup(){
+void rov_main_setup(TcpClient& client){
     pinMode(NO_LEAK_PIN, INPUT);
     dac_setup(DAC_PIN, DAC_CLR_PIN, HV_ENABLE_PIN);
     
@@ -57,6 +57,7 @@ void rov_main_setup(){
     fourier_initialize(config.fourier_window_size);
 
     // Serial.begin(9600);
+    client.print("Started ROV main\n");
 
     config.my_frequency = 25000;
 }
