@@ -6,6 +6,5 @@ times = [202263; 202291; 202291; 202098; 202288; 201848; 202295; 201936; 202283;
 other_times = [200312; 200291; 200301; 200309; 200284; 200289; 200280; 200307; 200314; 200309;];
 
 scatter(1:length(times), times); hold on;
-scatter(1:length(other_times), other_times); hold on;
 xlabel("sample")
 ylabel("time [us]")

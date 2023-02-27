@@ -3,6 +3,7 @@
 
 #include "constants.h"
 #include <stdint.h>
+#include <stdbool.h>
 #include <IntervalTimer.h>
 
 typedef struct{
@@ -12,8 +13,9 @@ typedef struct{
     uint16_t micros_to_find_peak;
     uint16_t micros_send_duration;
     uint32_t response_timeout_duration;
+    bool use_rising_edge;
 } config_t;
 
-config_t config = {500, 10000, 18000, 1000, 1000, 400000};
+config_t config = {500, 50000, 18000, 1000, 1000, 400000, false};
 
 #endif
