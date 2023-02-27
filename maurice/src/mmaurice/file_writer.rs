@@ -11,7 +11,7 @@ use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::sync::Arc;
 
-use super::MsgToWrite;
+use super::AdcMsgToWrite;
 
 use super::{
     Command, Maurice, AdcRecMetadata, SoundEffect, ClientSocketWrapper};
@@ -37,8 +37,8 @@ use crate::{do_nothing, config::Config, config::MSG_SIZE_BYTES};
 //     });
 //     tx
 // }
-pub fn start_writer_thread() -> Sender<MsgToWrite> {
-    let (tx, rx) = channel::<MsgToWrite>();
+pub fn start_writer_thread() -> Sender<AdcMsgToWrite> {
+    let (tx, rx) = channel::<AdcMsgToWrite>();
 
     thread::spawn(move || {
         loop {
@@ -53,7 +53,7 @@ pub fn start_writer_thread() -> Sender<MsgToWrite> {
     tx
 }
 
-fn write_msg_to_file(msg_to_write: &MsgToWrite) -> std::io::Result<()> {
+fn write_msg_to_file(msg_to_write: &AdcMsgToWrite) -> std::io::Result<()> {
     let file_path = &msg_to_write.file_path;
     let msg = &msg_to_write.msg;
 

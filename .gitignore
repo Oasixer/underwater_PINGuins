@@ -9,3 +9,4 @@ venv/
 */*.gif
 
 adc_recordings/
+data_stream/**/*

@@ -5,24 +5,24 @@ use std::path::Path;
 
 
 const TIMEOUT_READ_MS: u64 = 1000;
-pub const MSG_SIZE_BYTES: usize = 801;
+pub const MSG_SIZE_BYTES: usize = 800;
 pub const OUTGOING_CMD_SIZE_BYTES: usize = 200;
 const MAX_MSG_POLL_INTERVAL_MS: u64 = 1;
-const DATA_STREAM_DIR: &str = "./data_stream";
-const ADC_DATA_DIR: &str = "adc_data";
-const CLI_DATA_DIR: &str = "cli_data";
+pub const DATA_STREAM_DIR: &str = "../data_stream";
+pub const ADC_DATA_DIR: &str = "adc_data";
+pub const CLI_DATA_DIR: &str = "cli_data";
 const PORT: u32 = 6969;
 
 const KNOWN_TEENSY_METADATA_COUNT: usize = 4;
 const TEENSY_MACS: [[u8; 6]; KNOWN_TEENSY_METADATA_COUNT] = [
-    [0x00, 0x0c, 0x29, 0x00, 0x00, 0x00],
+    [0x04, 0xe9, 0xe5, 0x14, 0x0f, 0x14],
     [0x00, 0x0c, 0x29, 0x00, 0x00, 0x01],
     [0x00, 0x0c, 0x29, 0x00, 0x00, 0x02],
     [0x00, 0x0c, 0x29, 0x00, 0x00, 0x03],
 ];
 
 const TEENSY_IPS: [[u8; 4]; 4] = [
-    [192, 168, 1, 60],
+    [192, 168, 1, 100], // 14
     [192, 168, 1, 60],
     [192, 168, 1, 60],
     [192, 168, 1, 60],
@@ -95,8 +95,10 @@ impl Config {
 
     pub fn full_mac(&self, last_byte: u8) -> [u8; 6]{
         // return the mac matching the last 2 digits provided
+        println!("Looking for mac with last byte: {:02x}", last_byte);
         for mac in self.teensy_macs.iter() {
             if mac[5] == last_byte {
+                println!("Found mac: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
                 return *mac;
             }
         }
@@ -113,7 +115,7 @@ impl Config {
             for mac in self.teensy_macs.iter() {
                 // serialize mac to xx:xx:xx:xx:xx:xx
                 let mut mac_str = String::new();
-                for i in 0..5 {
+                for i in 0..6 {
                     mac_str.push_str(&format!("{:02x}:", mac[i]));
                 }
                 println!("{} [{}]", mac[5], mac_str);

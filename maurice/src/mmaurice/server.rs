@@ -4,8 +4,9 @@ use std::io::{Read, ErrorKind};
 use chrono::prelude::*;
 use std::fs::File;
 use std::io::Write;
+use std::sync::mpsc::{channel, Sender, Receiver};
 
-use crate::utils::create_directories;
+use crate::utils::{create_parent_directories};
 use crate::config::UnknownIpAddrError;
 use crate::config::MSG_SIZE_BYTES;
 use super::{
@@ -14,9 +15,55 @@ use super::{
     ConnectionChange,
     ClientSocketWrapper,
     Msg,
-    MsgToWrite,
+    AdcMsgToWrite,
     AdcRecMetadata,
+    Command,
 };
+
+impl ClientSocketWrapper {
+    pub fn setup_stream(&mut self){
+        let file_path = &self.stream_file_name;
+        create_parent_directories(file_path).expect("failed to create directories");
+
+
+        let mut file = File::open(file_path);
+        if let Err(e) = File::open(file_path) {
+            if e.kind() == std::io::ErrorKind::NotFound {
+                file = File::create(file_path);
+            } else {
+                panic!("unable to create stream file: {}", file_path);
+            }
+        }
+        self.stream_file = Some(file.unwrap());
+    }
+    pub fn fprint(&self, msg: &str) {
+        if (self.stream_file.is_none()) {
+            panic!("stream_file is None");
+        }
+        if let Err(e) = self.stream_file.as_ref().unwrap().write_all(msg.as_bytes()) {
+            eprintln!("Error writing to stream file: {}", e);
+        }
+        // self.stream_file
+    }
+    pub fn fprint_create_file(&mut self, msg: &str) {
+        if (self.stream_file.is_none()) {
+            self.setup_stream();
+            // panic!("stream_file is None");
+        }
+        if let Err(e) = self.stream_file.as_ref().unwrap().write_all(msg.as_bytes()) {
+            eprintln!("Error writing to stream file: {}", e);
+        }
+        // self.stream_file
+    }
+
+    pub fn report_begin_recording(&self) {
+        // maurice.sound_player.play_sound_effect(SoundEffect::StartRecording);
+        let duration = self.adc_rec_metadata.duration.expect("duration not set yet???");
+        self.fprint(&format!("Began recording data for {} sec\n", duration.as_secs()));
+        // maurice.sound_player.play_sound_effect(SoundEffect::StartRecording);
+    }
+}
+
 
 impl Maurice {
     pub(super) fn accept_new_connections_nonblocking(&mut self) {
@@ -24,14 +71,7 @@ impl Maurice {
         if let Ok((mut socket, addr)) = self.server.accept() {
             println!("\n=============== PINGUIN CONNECTED {} ================", addr);
             Self::print_commands_info();
-            self.sound_player.play_sound_effect(SoundEffect::Connect);
-            // conn.as_ref().unwrap().set_read_timeout(Some(Duration::from_millis(TIMEOUT_READ_MS))).expect("Failed to set read timeout.");
-
             socket.set_read_timeout(Some(Duration::from_millis(self.config.timeout_read_ms))).expect("Failed to set read timeout.");
-
-            let tx_msg_from_client_listener_to_consumer = self.tx_msg_from_client_listener_to_consumer.clone();
-            let tx_file_writer = self.tx_file_writer.clone();
-            let tx_connection_change = self.tx_connection_change.clone();
 
             let ip_bytes = match addr.ip() {
                 std::net::IpAddr::V4(ipv4) => ipv4.octets(),
@@ -41,6 +81,13 @@ impl Maurice {
             let mac: [u8;6] = self.config.get_mac_from_ip(ip_bytes).expect("failed to get mac from ip");
 
             let cur_datetime: DateTime<Local> = Local::now();
+            
+            // let (tx_cmd_from_stdin_listener_to_client, rx_client_publisher) = channel::<Command>();
+            let tx_msg_from_client_listener_to_consumer = self.tx_msg_from_client_listener_to_consumer.clone();
+            let tx_adc_file_writer = self.tx_adc_file_writer.clone();
+            let tx_connection_change = self.tx_connection_change.clone();
+
+
             let client_socket_wrapper: ClientSocketWrapper = ClientSocketWrapper {
                 mac,
                 latest_connection_change: Some(ConnectionChange{
@@ -49,17 +96,18 @@ impl Maurice {
                 }),
                     // adc_rec_metadata_changed: None}),
                 stream: socket.try_clone().expect("failed to clone client: wtf... how?"),
-                stream_file_name: format!("{}/{}/{}", self.config.data_stream_dir, mac.iter().map(|b| format!("{:02x}", b)).collect::<String>(), cur_datetime.format("%Y-%m-%d_%H-%M-%S")),
+                stream_file_name: format!("{}/{}/{}/{}", self.config.data_stream_dir, mac.iter().map(|b| format!("{:02x}", b)).collect::<String>(), self.config.cli_data_dir, cur_datetime.format("%Y-%m-%d_%H-%M-%S")),
                 stream_file: None,
                 adc_rec_metadata: AdcRecMetadata{
                     socket_mac: mac,
-                    tx_file_writer,
+                    tx_adc_file_writer,
                     file_prefix: None,
                     file_suffix: None,
                     file_name: None,
                     duration: None,
                     end_time: None,
                 },
+                // tx_cmd_from_stdin_listener_to_client,
             };
             // not sure if needed yet
             tx_connection_change.send(ConnectionChange{
@@ -67,8 +115,6 @@ impl Maurice {
                 is_connected: true,
                 // adc_rec_metadata_changed: None
             }).expect("failed to send connection change out of channel");
-
-
             
             self.client_sockets.push(client_socket_wrapper);
 
@@ -91,8 +137,8 @@ impl Maurice {
                     }
                     // socket should be blocking, so this should never happen?
                     Err(ref err) if err.kind() == ErrorKind::WouldBlock => (),
-                    Err(_) => {
-                        println!("Closing connection with: {}", addr);
+                    Err(err) => {
+                        println!("Closing connection with: {} due to {}", addr, err);
                         tx_connection_change.send(ConnectionChange{
                             mac,
                             is_connected: false,
@@ -101,109 +147,38 @@ impl Maurice {
                         break;
                     }
                 }
-                sleep(config.max_msg_poll_interval_ms);
+                // socket.flush().expect("failed to flush socket");
+                // sleep causes fuckery here
+                // sleep(config.max_msg_poll_interval_ms);
                 // sleep(MAX_MSG_POLL_INTERVAL_MS);
             });
         }
     }
 
-    pub(super) fn poll_for_messages_passed_from_socket_polling_threads(&mut self) {
-        if let Ok(msg) = self.rx_msg_consumer.try_recv() {
-            let mac: [u8;6] = msg.mac;
-            println!("Got a message from {}", mac[5]);
-            let client_socket_wrapper: Result<&mut ClientSocketWrapper, String> = self.get_client_socket(mac);
-            match client_socket_wrapper {
-                Err(e) => {
-                    panic!("Somehow we lied about what MAC we received shit from {}", e);    
-                }
-                Ok(client_socket_wrapper) => {
-                    // let client_socket_wrapper = client_socket_wrapper;
-                    if client_socket_wrapper.stream_file.is_none() {
-                        let file_path = &client_socket_wrapper.stream_file_name;
-                        create_directories(file_path).expect("failed to create directories");
-
-
-                        let mut file = File::open(file_path);
-                        if let Err(e) = File::open(file_path) {
-                            if e.kind() == std::io::ErrorKind::NotFound {
-                                file = File::create(file_path);
-                            } else {
-                                panic!("unable to create stream file: {}", file_path);
-                            }
-                        }
-                        client_socket_wrapper.stream_file = Some(file.unwrap());
-                    }
-                    if msg.bytes[0] == 0b00000000 { // flag for adc message
-                        let mac_str = mac.iter().map(|b| format!("{:02x}", b)).collect::<String>(); 
-                        // let adc_rec_metadata = client_socket_wrapper.adc_rec_metadata.as_mut().unwrap();
-                        if client_socket_wrapper.adc_rec_metadata.end_time.is_some() {
-                            if Instant::now() > client_socket_wrapper.adc_rec_metadata.end_time.unwrap() {
-                            // client_socket_wrapper.adc_rec_metadata = None;
-                            // adc_rec_metadata.stream_file
-                                // self.sound_player.play_sound_effect(SoundEffect::EndRecording);
-                                // self.sound_player_
-                                
-                                client_socket_wrapper.stream2("Finished recording!");
-                                client_socket_wrapper.adc_rec_metadata.file_name = None;
-                                client_socket_wrapper.adc_rec_metadata.end_time = None;
-                            }
-                            client_socket_wrapper.adc_rec_metadata.write(msg.bytes);//, tx_file_writer);
-                            //     let file_prefix = adc_rec_metadata.file_prefix.unwrap();
-                            //     let file_suffix = adc_rec_metadata.file_suffix.unwrap();
-                            //     let file_path = format!("{}/{}/{}/{}/{}{}", self.config.data_stream_dir, mac_str, self.config.adc_data_dir, file_prefix, file_suffix.as_str());
-                            //     create_directories(file_path).expect("failed to create directories");
-                            //     let mut file = File::open(file_path);
-                            //     if let Err(e) = File::open(file_path) {
-                            //         if e.kind() == std::io::ErrorKind::NotFound {
-                            //             file = File::create(file_path);
-                            //         } else {
-                            //             panic!("unable to create adc file: {}", file_path);
-                            //         }
-                            //     }
-                            //     let mut file = file.unwrap();
-                            //     file.write_all(&msg.bytes[1..]).expect("failed to write to file");
-                        }
-                            // } else
-                            // if adc_rec_metadata.file_prefix.is_some() {
-                            //     let file_prefix = adc_rec_metadata.file_prefix.unwrap();
-                            //     let file_suffix = adc_rec_metadata.file_suffix.unwrap();
-                            //     let file_path = format!("{}/{}/{}/{}/{}{}", self.config.data_stream_dir, mac_str, self.config.adc_data_dir, file_prefix, file_suffix.as_str());
-                            //     create_directories(file_path).expect("failed to create directories");
-                            //     let mut file = File::open(file_path);
-                            //     if let Err(e) = File::open(file_path) {
-                            //         if e.kind() == std::io::ErrorKind::NotFound {
-                            //             file = File::create(file_path);
-                            //         } else {
-                            //             panic!("unable to create adc file: {}", file_path);
-                            //         }
-                            //     }
-                            //     let mut file = file.unwrap();
-                            //     file.write_all(&msg.bytes[1..]).expect("failed to write to file");
-                            // }
-                            // client_socket_wrapper.adc_rec_metadata = Some(AdcRecMetadata::new());
-                        // }
-                        // let msg_to_write: MsgToWrite{
-                            // file_path: format!("{}/{}", self.config.data_stream_dir, "adc"),
-                        // }
-                    }
-                    
-                    // check if first 4 bits are 0b0110
-                    if msg.bytes[0] & 0b11110000 == 0b01100000 { // flag for string message
-                        // append remaining 800 bytes to stream_file
-                        // find last non-zero byte in msg
-                        let last_non_zero_byte = msg.bytes.iter().rposition(|&b| b != 0).unwrap();
-                        writeln!(client_socket_wrapper.stream_file.as_mut().unwrap(), "{}", String::from_utf8(msg.bytes[1..last_non_zero_byte+1].to_vec()).unwrap()).expect("failed to write to file");
-                    }
-                } // client_socket_wrapper found
-            } // match client_socket_wrapper
-        }
-        sleep(self.config.max_msg_poll_interval_ms);
-    }
     pub(super) fn poll_for_connection_changes(&mut self){
         if let Ok(connection_change) = self.rx_connection_change.try_recv() {
-            println!("got a connection change from the consumer thread: {}", connection_change.mac[0]);
+            println!("got a connection change to connected={} from the consumer thread: {}", connection_change.is_connected, connection_change.mac[5]);
             if connection_change.is_connected {
                 self.sound_player.play_sound_effect(SoundEffect::Connect);
+                match self.get_client_socket(connection_change.mac){
+                    Ok(client_socket_wrapper) => {
+                        client_socket_wrapper.fprint_create_file("Connected!\n");
+                    }
+                    Err(_) => {
+                        panic!("client socket wrapper not found");
+                    }
+                }
+            }
+            else {
+                self.sound_player.play_sound_effect(SoundEffect::Disconnect);
+                match self.get_client_socket(connection_change.mac){
+                    Ok(client_socket_wrapper) => {
+                        client_socket_wrapper.fprint_create_file("Disconnected!\n");
+                    }
+                    Err(_) => {
+                        panic!("client socket wrapper not found");
+                    }
+                }
             }
             //     .into_iter()
             //     .filter_map(|mut client| {
@@ -221,10 +196,6 @@ impl Maurice {
             //     })
             //     .collect::<Vec<_>>();
         }
-        sleep(self.config.max_msg_poll_interval_ms);
+        // sleep(self.config.max_msg_poll_interval_ms);
     }
-}
-
-fn sleep(millis: u64) {
-    thread::sleep(std::time::Duration::from_millis(millis));
 }
