@@ -86,7 +86,7 @@ void detect_frequencies() {
 }
 
 void reset_send_receive(){
-    Serial.printf("ts_peak: %i, ts_start_talking: %i, ts_start_listening: %i, ts_response_timeout: %i\n", (uint32_t)ts_peak, (uint32_t)ts_start_talking, (uint32_t)ts_start_listening, (uint32_t)ts_response_timeout);
+    // Serial.printf("ts_peak: %i, ts_start_talking: %i, ts_start_listening: %i, ts_response_timeout: %i\n", (uint32_t)ts_peak, (uint32_t)ts_start_talking, (uint32_t)ts_start_listening, (uint32_t)ts_response_timeout);
     uint64_t trip_time = ts_peak - ts_start_talking;
     trip_times[n_talks_done] = trip_time; // store for later
     Serial.printf("Trip Time: %ius\n", (uint32_t)trip_time);
@@ -98,15 +98,16 @@ void reset_send_receive(){
     switch_relay_to_send();
 
     if (++n_talks_done < n_talks_command){  // still have to send receive more
-        ts_start_talking = ts_response_timeout;
+        ts_start_talking = micros() + INACTIVE_DURATION_BEFORE_TALKING;
         ts_response_timeout = ts_start_talking + config.response_timeout_duration;
+        // Serial.printf("ts_curr: %i, ts_start_talking: %i, ts_reponse_timeout: %i\n", (uint32_t)micros(), (uint32_t)ts_start_talking, (uint32_t)ts_response_timeout);
 
     } else {  // did all the commanded send receives
-        Serial.printf("\n\nFinished send receives %i times. Trip times in us are:\n", n_talks_done);
+        Serial.printf("Finished send receives %i times. Trip times in us are:\n", n_talks_done);
         for (uint16_t i = 0; i < n_talks_done; ++i){
             Serial.print(trip_times[i]); Serial.print(", ");
         }
-        Serial.println();
+        Serial.println("\n\n");
         n_talks_command = 0;
         n_talks_done = 0;
     }
@@ -128,31 +129,31 @@ void rov_receive_mode_hb(){
         ts_peak = -1;  // indicate that was not able to find peak
         Serial.println("TIMEOUT didn't hear a response");
         reset_send_receive();
-    }
-    if (micros() >= ts_start_listening){  // if not in inactive period
-        if (is_peak_finding) {
-            rov_peak_finding();
-        } else {
-            detect_frequencies();
+    } else {
+        if (micros() >= ts_start_listening){  // if not in inactive period
+            if (is_peak_finding) {
+                rov_peak_finding();
+            } else {
+                detect_frequencies();
+            }
         }
     }
 }
-bool printed_that_sent = false;
+
 void rov_send_mode_hb(){
-    if (micros() - ts_start_talking < config.micros_send_duration){ // keep sending
-        dac_set_analog_float(sinf(2 * M_PI * config.my_frequency  / 1000000 * (float)(micros() % (1000000 / config.my_frequency))));
-        if (!printed_that_sent){
-            printed_that_sent = true;
-            Serial.println("sending");
+    if (micros() >= ts_start_talking){ // send data
+        if (micros() - ts_start_talking < config.micros_send_duration){ // keep sending
+            dac_set_analog_float(sinf(2 * M_PI * config.my_frequency  / 1000000 * (float)(micros() % (1000000 / config.my_frequency))));
+
+        } else { // finished beep
+            ts_start_listening = micros() + INACTIVE_DURATION_AFTER_BEEP;
+            is_currently_receiving = true; // switch to receiving
+
+            // Serial.printf("Finished sending at %i. Will start listening at %i\n", (uint32_t)micros(), (uint32_t)ts_start_listening);
+
+            switch_relay_to_receive();
+            adc_timer.begin(adc_timer_callback, ADC_PERIOD);
         }
-    } else { // finished beep
-        ts_start_listening = micros() + INACTIVE_DURATION_AFTER_BEEP;
-        is_currently_receiving = true; // switch to receiving
-
-        switch_relay_to_receive();
-        adc_timer.begin(adc_timer_callback, ADC_PERIOD);
-
-        printed_that_sent = false;
     }
 }
 

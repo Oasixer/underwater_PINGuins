@@ -14,6 +14,6 @@ typedef struct{
     uint32_t response_timeout_duration;
 } config_t;
 
-config_t config = {500, 5000, 18000, 1000, 1000, 500000};
+config_t config = {500, 10000, 18000, 1000, 1000, 400000};
 
 #endif
