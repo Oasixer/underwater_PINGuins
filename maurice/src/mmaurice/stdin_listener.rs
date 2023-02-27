@@ -14,6 +14,11 @@ use super::{
 use crate::{do_nothing, config::Config, utils::hex_string_to_u8};
 use crate::config::{DATA_STREAM_DIR, ADC_DATA_DIR};
 use crate::utils::create_directories;
+// use rustyline::error::ReadlineError;
+use rustyline::error::ReadlineError;
+use rustyline;
+// use rustyline::{DefaultEditor, Result};
+
 // #[macro_use]
 // use 
 // use std::time::Duration;
@@ -21,6 +26,7 @@ use crate::utils::create_directories;
 pub fn start_stdin_listener_thread() -> Receiver<String> {
     let (tx, rx) = channel::<String>();
     thread::spawn(move || loop {
+        
         let mut buffer = String::new();
         stdin().read_line(&mut buffer).unwrap();
         if buffer.len() > 0 {
@@ -30,10 +36,54 @@ pub fn start_stdin_listener_thread() -> Receiver<String> {
     rx
 }
 
+pub fn start_stdin_listener_thread2() -> Receiver<String> {
+    let (tx, rx) = channel::<String>();
+    thread::spawn(move || {
+        let mut rl = rustyline::DefaultEditor::new().unwrap();
+
+        loop {
+            // `()` can be used when no completer is required
+            // #[cfg(feature = "with-file-history")]
+            // if rl.load_history("history.txt").is_err() {
+            //     println!("No previous history.");
+            // }
+            let mut buffer = String::new();
+            let readline = rl.readline(">> ");
+            match readline {
+                Ok(line) => {
+                    rl.add_history_entry(line.as_str());
+                    buffer = line;
+                    println!("Line: {}", &buffer);
+                },
+                Err(ReadlineError::Interrupted) => {
+                    println!("CTRL-C");
+                    break
+                },
+                Err(ReadlineError::Eof) => {
+                    println!("CTRL-D");
+                    break
+                },
+                Err(err) => {
+                    println!("Error: {:?}", err);
+                    break
+                }
+            }
+            if buffer.len() > 0 {
+                tx.send(buffer).unwrap();
+            }
+        }
+    });
+    rx
+        // #[cfg(feature = "with-file-history")]
+        // rl.save_history("history.txt");
+        // Ok(())
+            // stdin().read_line(&mut buffer).unwrap();
+}
+
 impl Maurice{
     fn report_cmd(&self, info: &str){
         println!("{}",info);
-        println!("Type next command...");
+        // println!("Type next command...");
     }
 
     fn report_cmd_fail(&self, info: &str){

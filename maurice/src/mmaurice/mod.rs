@@ -137,7 +137,7 @@ impl Maurice {
         //      rx_client_publisher) = mpsc::channel::<Command>();
         
         let (tx_connection_change, rx_connection_change) = mpsc::channel::<ConnectionChange>();
-        let rx_stdin_listener = stdin_listener::start_stdin_listener_thread();
+        let rx_stdin_listener = stdin_listener::start_stdin_listener_thread2();
 
         let tx_file_writer = file_writer::start_writer_thread();
 

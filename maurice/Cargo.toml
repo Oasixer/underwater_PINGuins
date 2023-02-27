@@ -10,6 +10,7 @@ default-run = "maurice"
 [dependencies]
 chrono = "0.4.23"
 rodio = "0.17.0"
+rustyline = "11.0.0"
 strum = "0.24.1"
 strum_macros = "0.24.3"
 
