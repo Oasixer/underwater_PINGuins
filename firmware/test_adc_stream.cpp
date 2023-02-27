@@ -9,6 +9,8 @@
 #define PRINT_MSG_OVERRUN 1           // uncomment to print info when msg overrun detected
 // #define DISCONNECT_MSG_OVERRUN 1   // uncomment to disconnect on msg overrun
 
+#define USE_BOTH_SERVERS 1
+
 IPAddress server_ip_k(192, 168, 1, 70); //IP address target
 IPAddress server_ip_a(192, 168, 1, 123); //IP address target
 IPAddress* server_ip_try = &server_ip_k;
@@ -34,10 +36,10 @@ const int readPeriodMicros = 2; // us
 #define MSG_PERIOD_MILLIS (readPeriodMicros * READINGS_PER_MSG / 1000.0)
 #define MEASURE_SPEED_EVERY_N_MSGS int(MEASURE_SPEED_EVERY_N_MILLIS / MSG_PERIOD_MILLIS)
 
-uint8_t msg_buf[BUF_LEN];
-volatile uint64_t curMsgBeingCreated = 0;
-volatile uint64_t curMsgBeingSent = 0;
-volatile uint16_t curReadingInMsg = 0;
+uint8_t adc_buf[BUF_LEN];
+volatile uint64_t cur_adc_msg_being_created = 0;
+volatile uint64_t cur_adc_msg_being_sent = 0;
+volatile uint16_t cur_reading_in_msg = 0;
 uint64_t measureSpeedFromMsg = 0;
 
 #define LEAK_DETECT_PIN 14
@@ -83,7 +85,7 @@ void test_adc_stream_setup(){
     }
 
     for (auto i=0; i<BUF_LEN; i++){
-        msg_buf[i] = 0;
+        adc_buf[i] = 0;
     }
 
     ///// ADC0 ////
@@ -122,14 +124,14 @@ void adc_isr() {
     //   - lower byte (least significant)
     const uint8_t upper_byte = (reading >> 8) & 0xFF;
     const uint8_t lower_byte = reading & 0xFF;
-    const uint32_t byte_offset = (curMsgBeingCreated % MSGS_IN_BUF) * BYTES_PER_MSG + curReadingInMsg * BYTES_PER_READING;
+    const uint32_t byte_offset = (cur_adc_msg_being_created % MSGS_IN_BUF) * BYTES_PER_MSG + cur_reading_in_msg * BYTES_PER_READING;
 
-    msg_buf[byte_offset] = upper_byte;
-    msg_buf[byte_offset+1] = lower_byte;
+    adc_buf[byte_offset] = upper_byte;
+    adc_buf[byte_offset+1] = lower_byte;
 
-    if (++curReadingInMsg > READINGS_PER_MSG){
-        curReadingInMsg = 0;
-        curMsgBeingCreated++;
+    if (++cur_reading_in_msg > READINGS_PER_MSG){
+        cur_reading_in_msg = 0;
+        cur_adc_msg_being_created++;
     }
     if (adc->adc0->adcWasInUse) {
         // restore ADC config, and restart conversion
@@ -173,7 +175,7 @@ bool test_adc_stream_loop(bool connection_active){
         if (client.connect(*server_ip_try, SERVER_PORT)) {
             Serial.print("connected to ");
             Serial.println(client.remoteIP());
-            measureSpeedFromMsg = curMsgBeingSent;
+            measureSpeedFromMsg = cur_adc_msg_being_sent;
             connection_timestamp = millis();
         } else {
             Serial.println("Server connection failed, though ethernet connection probably fine?");
@@ -252,29 +254,29 @@ bool test_adc_stream_loop(bool connection_active){
     return true;
     #endif
 
-    if (curMsgBeingCreated - curMsgBeingSent > 1){
-        if (curMsgBeingCreated - curMsgBeingSent > MSGS_IN_BUF){
+    if (cur_adc_msg_being_created - cur_adc_msg_being_sent > 1){
+        if (cur_adc_msg_being_created - cur_adc_msg_being_sent > MSGS_IN_BUF){
             #ifdef PRINT_MSG_OVERRUN
                 Serial.println("Buffer overrun, skip data & sending msg of ");
-                Serial.print("curMsgBeingCreated: "); Serial.println(curMsgBeingCreated);
-                Serial.print("curMsgBeingSent: "); Serial.println(curMsgBeingSent);
-                Serial.print("created - sent (before): "); Serial.println(curMsgBeingCreated - curMsgBeingSent);
-                // curMsgBeingSent = (curMsgBeingCreated - MSGS_IN_BUF + 2);
-                // Serial.print("created - sent (after): "); Serial.println(curMsgBeingCreated - curMsgBeingSent);
+                Serial.print("cur_adc_msg_being_created: "); Serial.println(cur_adc_msg_being_created);
+                Serial.print("cur_adc_msg_being_sent: "); Serial.println(cur_adc_msg_being_sent);
+                Serial.print("created - sent (before): "); Serial.println(cur_adc_msg_being_created - cur_adc_msg_being_sent);
+                // cur_adc_msg_being_sent = (cur_adc_msg_being_created - MSGS_IN_BUF + 2);
+                // Serial.print("created - sent (after): "); Serial.println(cur_adc_msg_being_created - cur_adc_msg_being_sent);
                 // Serial.print("expect delta:"); Serial.println(MSGS_IN_BUF - 2);
                 // Serial.print("client.connected(): "); Serial.println(client.connected());
             #endif
-            curMsgBeingSent = (curMsgBeingCreated - MSGS_IN_BUF + 2);
+            cur_adc_msg_being_sent = (cur_adc_msg_being_created - MSGS_IN_BUF + 2);
             connection_timestamp = millis();
-            measureSpeedFromMsg = curMsgBeingSent - 1;
+            measureSpeedFromMsg = cur_adc_msg_being_sent - 1;
             #ifdef DISCONNECT_MSG_OVERRUN
                 Serial.println("Buffer overrun, disconnecting.");
-                // reset msg_buf to all 0, reset curMsgBeingCreated, reset curMsgBeingSent
+                // reset adc_buf to all 0, reset cur_adc_msg_being_created, reset cur_adc_msg_being_sent
                 delay(5000);
                 return false;
             #endif DISCONNECT_MSG_OVERRUN
 
-            // skip data to catch up by incrementing curMsgBeingSent
+            // skip data to catch up by incrementing cur_adc_msg_being_sent
             const uint8_t overrun_flag[BYTES_PER_MSG] = {0x5F};
             const uint16_t n = client.write(overrun_flag, BYTES_PER_MSG);
             if (!check_bytes(n, client)){
@@ -282,15 +284,15 @@ bool test_adc_stream_loop(bool connection_active){
             }
             // +2 from end of ringbuffer to help you catch up to the buffer, dumbass teensy
 
-            // curMsgBeingSent = (curMsgBeingCreated - MSGS_IN_BUF + 2);
+            // cur_adc_msg_being_sent = (cur_adc_msg_being_created - MSGS_IN_BUF + 2);
             return true;
         }
         #define DOUBLE_SPD 1
-        if (curMsgBeingSent % MEASURE_SPEED_EVERY_N_MSGS == 0 && curMsgBeingSent-1 > measureSpeedFromMsg){
+        if (cur_adc_msg_being_sent % MEASURE_SPEED_EVERY_N_MSGS == 0 && cur_adc_msg_being_sent-1 > measureSpeedFromMsg){
             Serial.print("free: ");
             // Serial.println(client.free());
             const uint64_t elapsed = millis() - connection_timestamp;
-            const uint16_t sentMsgs = (curMsgBeingSent - 1 - measureSpeedFromMsg) * DOUBLE_SPD;
+            const uint16_t sentMsgs = (cur_adc_msg_being_sent - 1 - measureSpeedFromMsg) * DOUBLE_SPD;
             float rate_kilobyte_per_s = sentMsgs * BYTES_PER_MSG / elapsed;
             Serial.print("Sent ");
             Serial.print(sentMsgs);
@@ -302,18 +304,18 @@ bool test_adc_stream_loop(bool connection_active){
             Serial.print(rate_kilobyte_per_s);
             Serial.println(" kB/s");
             connection_timestamp = millis();
-            measureSpeedFromMsg = curMsgBeingSent - 1;
+            measureSpeedFromMsg = cur_adc_msg_being_sent - 1;
         }
         // send the message
-        const uint32_t byte_offset = (curMsgBeingSent % MSGS_IN_BUF) * BYTES_PER_MSG;
+        const uint32_t byte_offset = (cur_adc_msg_being_sent % MSGS_IN_BUF) * BYTES_PER_MSG;
         
         // flag
-        // msg_buf[byte_offset] = 0x00;
-        const uint16_t n = client.write(&msg_buf[byte_offset], BYTES_PER_MSG); // takes 0-2 ms
+        // adc_buf[byte_offset] = 0x00;
+        const uint16_t n = client.write(&adc_buf[byte_offset], BYTES_PER_MSG); // takes 0-2 ms
         if (!check_bytes(n, client)){
             return false;
         }
-        // const uint16_t n2 = client.write(&msg_buf[byte_offset], BYTES_PER_MSG); // takes 0-2 ms
+        // const uint16_t n2 = client.write(&adc_buf[byte_offset], BYTES_PER_MSG); // takes 0-2 ms
         // if (!check_bytes(n2, client)){
         //     return false;
         // }
@@ -321,7 +323,7 @@ bool test_adc_stream_loop(bool connection_active){
         #ifdef PRINT_MSG_SEND
         Serial.print("\n>");
         #endif
-        curMsgBeingSent++;
+        cur_adc_msg_being_sent++;
     }
     else{
         #ifdef PRINT_MSG_WAIT

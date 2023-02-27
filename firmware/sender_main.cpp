@@ -46,7 +46,8 @@ void sender_main_loop() {
     } else {  // no leak
         if (Serial.available() > 0) {
             // Read the incoming message from the serial port
-            String message = Serial.readStringUntil(message_terminator);
+            // String message = Serial.readStringUntil(message_terminator);
+            String message = 
 
             if (message.indexOf('h') >= 0){  // just a ping
                 Serial.println("hi");
