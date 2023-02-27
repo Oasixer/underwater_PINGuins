@@ -30,7 +30,7 @@ for i = 1:numSteps
     
     % Plot the current DFT as a bar graph
     bar(f, 2*abs(DFT(1:windowSize/2+1,i))/windowSize);
-    axis([5000 15000 0 500]);
+    axis([5000 55000 0 500]);
     xlabel('Frequency (Hz)');
     ylabel('Magnitude');
     title(sprintf('Sliding DFT at time %.4f', (i-1)*stepSize/fs));
