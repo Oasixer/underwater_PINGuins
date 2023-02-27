@@ -28,6 +28,7 @@ void loop() {
   // rov_main_loop();
   // test_fourier_speed_main();
     client.poll_reconnect_if_needed();
+    client.poll_send_msgs(); // only for ADC
     stationary_main_loop(client);
     // sender_main_loop();
   // test_dac_driver_loop();

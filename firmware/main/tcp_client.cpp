@@ -84,7 +84,7 @@ String TcpClient::get_incoming_cmd(){
 }
 
 void TcpClient::poll_reconnect_if_needed(){
-    Serial.println("Polling reconnect if needed");
+    // Serial.println("Polling reconnect if needed");
     if (!client.connected()){
         Serial.println("Client not connected, reconnecting");
         if (++consecutive_connection_failures > 5){

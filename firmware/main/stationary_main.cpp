@@ -145,7 +145,6 @@ void stationary_main_loop(TcpClient& client){
         adc_timer.end(); // turn off ADC timer so that we only send Leak Detect messages
         client.send_leak_detected_panic_message();
     } else {
-
         String message= "";
         if (client.has_cmd_available()){
             message = client.get_incoming_cmd();
