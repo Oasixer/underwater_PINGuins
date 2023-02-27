@@ -36,6 +36,7 @@ void TcpClient::setup(){
 bool TcpClient::has_cmd_available(){
     int avail = client.available();
     if (avail > 0){
+        Serial.println("found message");
         if (avail > INCOMING_MSG_SIZE_BYTES){
             Serial.print("Incoming message size: ");
             Serial.print(avail);
@@ -211,6 +212,7 @@ void TcpClient::send_leak_detected_panic_message(){
 
 void TcpClient::print(String message){
     string_msg[0] = 0b10010000;
+    Serial.print(message);
     for (auto i=1; i<BYTES_PER_MSG; i++){
         if (i < message.length()+1){
             string_msg[i] = message.charAt(i-1);
@@ -228,6 +230,7 @@ void TcpClient::print(String message){
     // delay(500);
     if (!check_bytes(n)){
     }
+
 }
 
 bool TcpClient::check_bytes(uint16_t n){

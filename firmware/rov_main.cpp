@@ -6,7 +6,7 @@
 #include "relay.h"
 #include "fourier.h"
 #include "printing.h"
-#include "TcpClient.h"
+#include "tcp_client.h"
 
 #include <Arduino.h>
 #include <stdint.h>
@@ -57,6 +57,7 @@ void rov_main_setup(TcpClient& client){
     fourier_initialize(config.fourier_window_size);
 
     // Serial.begin(9600);
+    client.print("Started ROV main\n");
 
     config.my_frequency = 25000;
 }
@@ -168,17 +169,18 @@ void rov_main_loop(TcpClient& client){
         client.send_leak_detected_panic_message();
     } else {
         String message= "";
+        //Serial.println("adc main()");
+
         if (client.has_cmd_available()){
+            Serial.println("grab cmd");
             message = client.get_incoming_cmd();
+            Serial.println("got mnsg");
         }
         else if (Serial.available() > 0){
             message = Serial.readStringUntil(message_terminator);
         }
         if (message.length() > 0) {
-
-            // Read the incoming message from the serial port
-            String message = Serial.readStringUntil(message_terminator);
-
+            
             // Split the message into tokens using the delimiter
             int pos = 0;
             while (pos < message.length()) {
