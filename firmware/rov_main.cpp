@@ -46,7 +46,7 @@ uint64_t trip_times[MAX_N_TRIPS] = {0};
 uint16_t n_talks_done = 0;
 uint16_t n_talks_command = 0;
 
-void rov_main_setup(){
+void rov_main_setup(TcpClient& client){
     pinMode(NO_LEAK_PIN, INPUT);
     dac_setup(DAC_PIN, DAC_CLR_PIN, HV_ENABLE_PIN);
     
