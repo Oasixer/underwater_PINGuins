@@ -132,7 +132,7 @@ fn find_latest_file(dir: &str) -> Result<String, std::io::Error> {
 
     // Find the first file with an ISO 8601 conforming filename
     for file in files {
-        println!("file: {:?}", file);
+        // println!("file: {:?}", file);
         if let Some(filename) = file.file_name().and_then(|n| n.to_str()) {
             if is_iso8601_filename(filename) {
                 return Ok(file.to_str().unwrap().to_string());

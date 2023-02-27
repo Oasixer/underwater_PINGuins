@@ -120,7 +120,7 @@ impl Maurice {
 
             // let MSG_SIZE_BYTES = self.config.MSG_SIZE_BYTES;
             // let MAX_MSG_POLL_INTERVAL_MS = self.config.MAX_MSG_POLL_INTERVAL_MS;
-            let config = self.config.clone();
+            // let config = self.config.clone();
 
             thread::spawn(move || loop {
                 // let tx_msg_from_client_listener_to_consumer
@@ -157,7 +157,7 @@ impl Maurice {
 
     pub(super) fn poll_for_connection_changes(&mut self){
         if let Ok(connection_change) = self.rx_connection_change.try_recv() {
-            println!("got a connection change to connected={} from the consumer thread: {}", connection_change.is_connected, connection_change.mac[5]);
+            // println!("got a connection change to connected={} from the consumer thread: {}", connection_change.is_connected, connection_change.mac[5]);
             if connection_change.is_connected {
                 self.sound_player.play_sound_effect(SoundEffect::Connect);
                 match self.get_client_socket(connection_change.mac){
@@ -180,22 +180,6 @@ impl Maurice {
                     }
                 }
             }
-            //     .into_iter()
-            //     .filter_map(|mut client| {
-            //         let mut buff = msg.clone().into_bytes();
-            //         buff.resize(MSG_SIZE, 0);
-
-            //         match client.write_all(&buff).map(|_| client) {
-            //             Ok(client) => Some(client),
-            //             Err(_) => {
-            //                 println!("Closing connection with: {}", addr);
-            //                 self.sound_player.play_sound(SoundEffect::Disconnect).unwrap();
-            //                 None
-            //             }
-            //         }
-            //     })
-            //     .collect::<Vec<_>>();
         }
-        // sleep(self.config.max_msg_poll_interval_ms);
     }
 }

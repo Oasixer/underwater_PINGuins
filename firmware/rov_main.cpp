@@ -6,6 +6,7 @@
 #include "relay.h"
 #include "fourier.h"
 #include "printing.h"
+#include "TcpClient.h"
 
 #include <Arduino.h>
 #include <stdint.h>
@@ -55,14 +56,12 @@ void rov_main_setup(){
     adc_setup();
     fourier_initialize(config.fourier_window_size);
 
-    Serial.begin(9600);
-
-    print_message("Starting\n");
+    // Serial.begin(9600);
 
     config.my_frequency = 25000;
 }
 
-void detect_frequencies() {
+void detect_frequencies(TcpClient& client) {
     for (uint8_t i = 0; i < N_FREQUENCIES; ++i) {
         if (frequency_magnitudes[i] > config.dft_threshold) {
             // initialize peak finding variables and switch to peak finding state
@@ -72,7 +71,7 @@ void detect_frequencies() {
             idx_freq_detected = i;
             is_peak_finding = true;
 
-            print_message("After " + uint64ToString(micros() - ts_start_listening) + 
+            client.print("After " + uint64ToString(micros() - ts_start_listening) + 
                 "us of listening, detected freq " + String(FREQUENCIES[i]) + 
                 "Hz, with magnitude " + String(curr_max_magnitude, 0) + ", with magnitudes: [" + 
                 String(frequency_magnitudes[0], 0) + ", " + String(frequency_magnitudes[1], 0) + ", " + 
@@ -87,10 +86,10 @@ void detect_frequencies() {
 // g 100
 // 
 
-void reset_send_receive(){
+void reset_send_receive(TcpClient& client){
     uint64_t trip_time = ts_peak - ts_start_talking;
     trip_times[n_talks_done] = trip_time; // store for later
-    print_message("Trip Time: " + uint64ToString(trip_time) + "us\n");
+    client.print("Trip Time: " + uint64ToString(trip_time) + "us\n");
 
     curr_max_magnitude = 0;  // reset to zero for next time
     is_peak_finding = false;  // start next time not in peak finding state
@@ -103,25 +102,25 @@ void reset_send_receive(){
         ts_response_timeout = ts_start_talking + config.response_timeout_duration;
 
     } else {  // did all the commanded send receives
-        print_message("Finished send receives " + String(n_talks_done) + " times. Trip times in us are:\n");
+        client.print("Finished send receives " + String(n_talks_done) + " times. Trip times in us are:\n");
         String msg = "[";
         for (uint16_t i = 0; i < n_talks_done; ++i){
             msg += uint64ToString(trip_times[i]); 
             msg += "; ";
             if (i % 10 == 9){
-                print_message(msg + "\n");
+                client.print(msg + "\n");
                 msg = "";
             }
         }
-        print_message(msg + "]\n\n");
+        client.print(msg + "]\n\n");
         n_talks_command = 0;
         n_talks_done = 0;
     }
 }
 
-void rov_peak_finding(){
+void rov_peak_finding(TcpClient& client){
     if (config.use_rising_edge || micros() >= ts_peak_finding_timeout){  // finished peak finding
-        reset_send_receive();
+        reset_send_receive(TcpClient& client);
     } else {
         if (frequency_magnitudes[idx_freq_detected] > curr_max_magnitude){
             curr_max_magnitude = frequency_magnitudes[idx_freq_detected];
@@ -130,23 +129,23 @@ void rov_peak_finding(){
     }
 }
 
-void rov_receive_mode_hb(){
+void rov_receive_mode_hb(TcpClient& client){
     if (micros() >= ts_response_timeout){ // assume wont get a response
         ts_peak = -1;  // indicate that was not able to find peak
-        print_message("TIMEOUT didn't hear a response\n");
+        client.print("TIMEOUT didn't hear a response\n");
         reset_send_receive();
     } else {
         if (micros() >= ts_start_listening){  // if not in inactive period
             if (is_peak_finding) {
-                rov_peak_finding();
+                rov_peak_finding(client);
             } else {
-                detect_frequencies();
+                detect_frequencies(client);
             }
         }
     }
 }
 
-void rov_send_mode_hb(){
+void rov_send_mode_hb(TcpClient& client){
     if (micros() >= ts_start_talking){ // send data
         if (micros() - ts_start_talking < config.micros_send_duration){ // keep sending
             dac_set_analog_float(sinf(2 * M_PI * config.my_frequency  / 1000000 * (float)(micros() % (1000000 / config.my_frequency))));
@@ -160,14 +159,23 @@ void rov_send_mode_hb(){
     }
 }
 
-void rov_main_loop(){
+void rov_main_loop(TcpClient& client){
     if(digitalRead(NO_LEAK_PIN) == THERE_IS_A_LEAK){
         digitalWrite(HV_ENABLE_PIN, LOW);  // turn off high voltage
         switch_relay_to_receive();  // switch to receive mode
         adc_timer.end(); // turn off ADC timer so that we only send Leak Detect messages
-        print_message("LEAK DETECTED\n");
+        // client.print("LEAK DETECTED\n");
+        client.send_leak_detected_panic_message();
     } else {
-        if (Serial.available() > 0){
+        String message= "";
+        if (client.has_cmd_available()){
+            message = client.get_incoming_cmd();
+        }
+        else if (Serial.available() > 0){
+            message = Serial.readStringUntil(message_terminator);
+        }
+        if (message.length() > 0) {
+
             // Read the incoming message from the serial port
             String message = Serial.readStringUntil(message_terminator);
 
@@ -183,7 +191,7 @@ void rov_main_loop(){
 
                 // Extract the field value based on the token prefix
                 if (token.startsWith("h")){  // just a ping
-                    print_message("hi\n");
+                    client.print("hi\n");
 
                 } else if (token.startsWith("s")){ // stop everything and go to default state;
                     is_transmit_continuously = false;
@@ -193,42 +201,42 @@ void rov_main_loop(){
                     n_talks_command = 0;
                     is_currently_receiving = false;
                     is_peak_finding = false;
-                    print_message("Stopped\n");
+                    client.print("Stopped\n");
 
                 } else if (token.startsWith("g")) { // talk for x times
                     n_talks_command = (uint16_t)token.substring(1).toInt();
                     ts_start_talking = micros();  // start talking now
-                    print_message("Gonna talk " + String(n_talks_command) + " times\n");
+                    client.print("Gonna talk " + String(n_talks_command) + " times\n");
                     ts_response_timeout = ts_start_talking + config.response_timeout_duration;
 
                 } else if (token.startsWith("f")) {  // change my frequency
                     config.my_frequency = (uint16_t)token.substring(1).toInt();
-                    print_message("Changed my frequency to " + String(config.my_frequency) + "\n");
+                    client.print("Changed my frequency to " + String(config.my_frequency) + "\n");
 
                 } else if (token.startsWith("N")) {  // change window size
                     config.fourier_window_size = (uint16_t)token.substring(1).toInt();
                     config.micros_to_find_peak = ADC_PERIOD * config.fourier_window_size;
                     config.micros_send_duration = ADC_PERIOD * config.fourier_window_size;
-                    print_message("Changed window size to " + String(config.fourier_window_size) + "\n");
+                    client.print("Changed window size to " + String(config.fourier_window_size) + "\n");
 
                 } else if (token.startsWith("t")) {  // change threshold
                     config.dft_threshold = (uint32_t)token.substring(1).toInt();
-                    print_message("Changed DFT threshold to " + String(config.dft_threshold) + "\n");
+                    client.print("Changed DFT threshold to " + String(config.dft_threshold) + "\n");
 
                 } else if (token.startsWith("o")) { // set timeout
                     config.response_timeout_duration = (uint32_t)token.substring(1).toInt();
-                    print_message("Changed response timeout to " + String(config.response_timeout_duration) + "us after talking starts\n");
+                    client.print("Changed response timeout to " + String(config.response_timeout_duration) + "us after talking starts\n");
 
                 } else if (token.startsWith("c")){ // transmit continuously
                     uint32_t millis_to_continuously_transmit = (uint32_t)token.substring(1).toInt();
-                    print_message("Will transmit continuously for " + String(millis_to_continuously_transmit) + "ms\n");
+                    client.print("Will transmit continuously for " + String(millis_to_continuously_transmit) + "ms\n");
                     is_transmit_continuously = true;
                     ts_stop_continuous_transmission = micros() + millis_to_continuously_transmit*1000;
                 
                 } else if (token.startsWith("r")) { // use rising edge 
                     uint8_t use_rising_edge = (uint8_t)token.substring(1).toInt();
                     config.use_rising_edge = use_rising_edge > 0;
-                    print_message("Use rising edge set to " + String(config.use_rising_edge) + "\n");
+                    client.print("Use rising edge set to " + String(config.use_rising_edge) + "\n");
                 }
             }
         }
@@ -237,15 +245,15 @@ void rov_main_loop(){
             if (micros() < ts_stop_continuous_transmission) { // should still transmit
                 dac_set_analog_float(sinf(2 * M_PI * config.my_frequency  / 1000000 * (float)(micros() % (1000000 / config.my_frequency))));
             } else { // stop transmitting
-                print_message("Finished continuous transmission\n");
+                client.print("Finished continuous transmission\n");
                 is_transmit_continuously = false;
             }
 
         } else if (n_talks_done < n_talks_command){  // if still have to send receive more
             if (is_currently_receiving){
-                rov_receive_mode_hb();
+                rov_receive_mode_hb(client);
             } else {  // sending
-                rov_send_mode_hb();
+                rov_send_mode_hb(client);
             }
 
         } // else do nothing

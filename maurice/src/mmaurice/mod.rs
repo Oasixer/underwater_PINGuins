@@ -49,7 +49,7 @@ pub struct AdcMsgToWrite{
 // #[derive(std::convert::AsRef)]
 pub struct Maurice{
     sound_player: SoundPlayer,
-    config: Arc<Config>,
+    config: Config,
     // client_sockets: Vec<TcpStream>,
     client_sockets: Vec<ClientSocketWrapper>,
     server: TcpListener,
@@ -62,6 +62,7 @@ pub struct Maurice{
     // rx_file_writer: Receiver<MsgToWrite>,
 }
 
+#[derive(Clone)]
 pub struct AdcRecMetadata{
     socket_mac: [u8; 6],
     tx_adc_file_writer: Sender<AdcMsgToWrite>,
@@ -122,7 +123,8 @@ impl Maurice {
     pub fn new(config: Config) -> Self {
         let sound_player = SoundPlayer::new();
         let client_sockets: Vec<ClientSocketWrapper> = vec![];
-        let config = Arc::new(config);
+        // let config = Arc::new(config);
+        let config = config.clone();
         let server = TcpListener::bind(format!("{}:{}",config.my_ip.as_str(), config.server_port)).expect("Listener failed to bind");
         server
             .set_nonblocking(true)

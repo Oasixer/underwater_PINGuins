@@ -50,7 +50,7 @@ impl Maurice{
     }
 
     fn handle_command_for_client(&mut self, target_mac_byte: &str, tokens: Vec<&str>) -> (Option<Command>, bool){
-        println!("Handle command for client");
+        // println!("Handle command for client");
         let target_last_byte = hex_string_to_u8(target_mac_byte);
         if target_last_byte.is_err(){
             self.report_cmd_fail(&format!("invalid hex string: {}",target_mac_byte));
@@ -147,7 +147,6 @@ impl Maurice{
                                 }
                             }
                             _ => {
-
                                 let cmd_str: String = tokens.join(" ");
                                 // fill cmd_bytes in with cmd_str, right padded w/ zeros
                                 // const msg_size_bytes: usize = self.config.OUTGOING_CMD_SIZE_BYTES;
@@ -157,10 +156,12 @@ impl Maurice{
                                 }
 
                                 // if not a w command, then its a string command that we will allow the teensy to handle.
+                                let mac_str = format!("{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
                                 let command = Command{
                                     target_mac: mac,
                                     bytes: cmd_bytes,
                                 };
+                                self.report_cmd(&format!("sending command: <{}> to {}",cmd_str, mac_str));
                                 return (Some(command), false);
                             }
                         }
@@ -171,7 +172,7 @@ impl Maurice{
     }
 
     fn handle_command(&mut self, input: String) -> Option<Command> {
-        let config: Arc<Config> = self.config.clone();
+        // let config: Config = self.config.clone();
         let tokens: Vec<&str> = input.trim().split_whitespace().collect();
             println!("tokens: {:?}", tokens);
         let tokens = tokens.iter().filter_map(|x| {
@@ -217,6 +218,20 @@ impl Maurice{
             if play_sound{
                 self.sound_player.play_sound_effect(SoundEffect::StartRecording);
             }
+
+            if result_cmd.is_some(){
+                let result_cmd = result_cmd.unwrap();
+                // let target_mac = result_cmd.target_mac;
+                return Some(result_cmd);
+                // let client: &mut ClientSocketWrapper = self.get_client_socket(target_mac).expect("unable to get client socket");
+                // client.send_command(result_cmd);
+                // client.fprint("Sending command: {}", input);
+            }
+        }
+        else{
+            self.sound_player.play_sound_effect(SoundEffect::Error);
+            self.report_cmd_fail(&format!("invalid command: {}", input));
+            return None;
         }
         // }
                 // } // found target mac
@@ -245,7 +260,9 @@ impl Maurice{
                     let command = command.unwrap();
                     let target_mac = command.target_mac;
                     let client: &mut ClientSocketWrapper = self.get_client_socket(target_mac).expect("unable to get client socket");
-                    client.fprint("Received command:\n");
+                    // read utf8 string from command.bytes:
+                    let command_str = String::from_utf8(command.bytes.to_vec()).unwrap();
+                    client.fprint(&format!("Received command: {}\n", command_str));
                     client.stream.write_all(&command.bytes).expect("unable to send command");
                     // client.tx_cmd_from_stdin_listener_to_client.send(command).unwrap();
                 }

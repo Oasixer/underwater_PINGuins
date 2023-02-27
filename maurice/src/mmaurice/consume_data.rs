@@ -6,9 +6,11 @@ use std::time::Instant;
 use super::{
     Maurice,
     ClientSocketWrapper,
+    AdcMsgToWrite,
     MSG_SIZE_BYTES,
     msound_player::{ SoundEffect, },
 };
+use crate::utils::create_parent_directories;
 
 impl Maurice {
     pub(super) fn poll_for_finished_recording(&mut self){
@@ -16,20 +18,20 @@ impl Maurice {
         for client_socket_wrapper in self.client_sockets.iter_mut() {
             if client_socket_wrapper.adc_rec_metadata.end_time.is_some() {
                 if Instant::now() > client_socket_wrapper.adc_rec_metadata.end_time.unwrap() {
-                        if (client_socket_wrapper.adc_rec_metadata.file_prefix.is_some()){
-                            client_socket_wrapper.fprint(&format!("Finished recording to file: {}_{} for {} sec\n",
-                                client_socket_wrapper.adc_rec_metadata.file_prefix.as_ref().unwrap(), client_socket_wrapper.adc_rec_metadata.file_suffix.unwrap(), client_socket_wrapper.adc_rec_metadata.duration.unwrap().as_secs())); 
-                                client_socket_wrapper.adc_rec_metadata.file_suffix = Some(client_socket_wrapper.adc_rec_metadata.file_suffix.unwrap() + 1);
-                        }
-                        else{
-                        client_socket_wrapper.fprint(&format!("Finished recording to file: {} for {} sec\n",
-                            client_socket_wrapper.adc_rec_metadata.file_name.as_ref().unwrap(), client_socket_wrapper.adc_rec_metadata.duration.unwrap().as_secs())); 
-                        }
+                    if (client_socket_wrapper.adc_rec_metadata.file_prefix.is_some()){
+                        client_socket_wrapper.fprint(&format!("Finished recording to file: {}_{} for {} sec\n",
+                            client_socket_wrapper.adc_rec_metadata.file_prefix.as_ref().unwrap(), client_socket_wrapper.adc_rec_metadata.file_suffix.unwrap(), client_socket_wrapper.adc_rec_metadata.duration.unwrap().as_secs())); 
+                            client_socket_wrapper.adc_rec_metadata.file_suffix = Some(client_socket_wrapper.adc_rec_metadata.file_suffix.unwrap() + 1);
+                    }
+                    else{
+                    client_socket_wrapper.fprint(&format!("Finished recording to file: {} for {} sec\n",
+                        client_socket_wrapper.adc_rec_metadata.file_name.as_ref().unwrap(), client_socket_wrapper.adc_rec_metadata.duration.unwrap().as_secs())); 
+                    }
 
-                        client_socket_wrapper.adc_rec_metadata.file_name = None;
-                        client_socket_wrapper.adc_rec_metadata.end_time = None;
+                    client_socket_wrapper.adc_rec_metadata.file_name = None;
+                    client_socket_wrapper.adc_rec_metadata.end_time = None;
 
-                        self.sound_player.play_sound_effect(SoundEffect::EndRecording);
+                    self.sound_player.play_sound_effect(SoundEffect::EndRecording);
                 }
             }
         }
@@ -37,6 +39,7 @@ impl Maurice {
 
     pub(super) fn poll_for_messages_passed_from_socket_polling_threads(&mut self) {
         if let Ok(msg) = self.rx_msg_consumer.try_recv() {
+            let config = self.config.clone();
             let mac: [u8;6] = msg.mac;
             // println!("Got a message from {}", mac[5]);
             // print first 10 bytes of message
@@ -56,33 +59,29 @@ impl Maurice {
                         client_socket_wrapper.fprint_create_file("Hi.");
                     }
                     if msg.bytes[0] & 0b11110000 == 0b00000000 { // flag for adc message
-                        let mac_str = mac.iter().map(|b| format!("{:02x}", b)).collect::<String>(); 
-                        // let adc_rec_metadata = client_socket_wrapper.adc_rec_metadata.as_mut().unwrap();
-                            // } else
-                            // if adc_rec_metadata.file_prefix.is_some() {
-                            //     let file_prefix = adc_rec_metadata.file_prefix.unwrap();
-                            //     let file_suffix = adc_rec_metadata.file_suffix.unwrap();
-                            //     let file_path = format!("{}/{}/{}/{}/{}{}", self.config.data_stream_dir, mac_str, self.config.adc_data_dir, file_prefix, file_suffix.as_str());
-                            //     create_directories(file_path).expect("failed to create directories");
-                            //     let mut file = File::open(file_path);
-                            //     if let Err(e) = File::open(file_path) {
-                            //         if e.kind() == std::io::ErrorKind::NotFound {
-                            //             file = File::create(file_path);
-                            //         } else {
-                            //             panic!("unable to create adc file: {}", file_path);
-                            //         }
-                            //     }
-                            //     let mut file = file.unwrap();
-                            //     file.write_all(&msg.bytes[1..]).expect("failed to write to file");
-                            // }
-                            // client_socket_wrapper.adc_rec_metadata = Some(AdcRecMetadata::new());
-                        // }
-                        // let msg_to_write: MsgToWrite{
-                            // file_path: format!("{}/{}", self.config.data_stream_dir, "adc"),
-                        // }
+                        if client_socket_wrapper.adc_rec_metadata.end_time.is_some(){
+                            let adc_rec_metadata = client_socket_wrapper.adc_rec_metadata.clone();
+                            let mac_str = mac.iter().map(|b| format!("{:02x}", b)).collect::<String>(); 
+                            let mut file_path_to_write= String::new();
+                            if adc_rec_metadata.file_prefix.is_some() && adc_rec_metadata.end_time.is_some() {
+                                let file_prefix = adc_rec_metadata.file_prefix.unwrap();
+                                let file_suffix = adc_rec_metadata.file_suffix.unwrap();
+                                file_path_to_write = format!("{}/{}/{}/{}_{}", config.data_stream_dir, mac_str, config.adc_data_dir, file_prefix, file_suffix);
+                            }
+                            else if adc_rec_metadata.file_name.is_some() {
+                                let file_name = adc_rec_metadata.file_name.unwrap();
+                                file_path_to_write = format!("{}/{}/{}/{}", config.data_stream_dir, mac_str, config.adc_data_dir, file_name);
+                            }
+                            create_parent_directories(&file_path_to_write).expect("failed to create directories");
+                            let msg_to_write: AdcMsgToWrite = AdcMsgToWrite{
+                                file_path: file_path_to_write,
+                                msg,
+                            };
+                            client_socket_wrapper.adc_rec_metadata.tx_adc_file_writer.send(msg_to_write).expect("failed to send message to adc file writer");
+                        }
                     }
                     
-                    // check if first 4 bits are 0b0110
+                    // check if first 4 bits are 0b1001
                     // else if msg.bytes[0] & 0b11110000 == 0b01100000 { // flag for string message
                     else if msg.bytes[0] == 0b10010000 { // flag for string message
                         // append remaining 799? bytes to stream_file
@@ -90,7 +89,12 @@ impl Maurice {
                         // println!("got a string message from {}", mac[5]);
                         let last_non_zero_byte = msg.bytes.iter().rposition(|&b| b != 0).unwrap();
                         // writeln!(client_socket_wrapper.stream_file.as_mut().unwrap(), "{}", String::from_utf8(msg.bytes[1..last_non_zero_byte+1].to_vec()).unwrap()).expect("failed to write to file");
-                        client_socket_wrapper.fprint(&format!("{}\n",String::from_utf8(msg.bytes[1..last_non_zero_byte+1].to_vec()).unwrap()));
+                        client_socket_wrapper.fprint(&format!("{}",String::from_utf8(msg.bytes[1..last_non_zero_byte+1].to_vec()).unwrap()));
+                    }
+                    else if msg.bytes[0] == 0b11111111 { // flag for leak message
+                        // find last non-zero byte in msg
+                        client_socket_wrapper.fprint("LEAK DETECTED!!!!\n");
+                        self.sound_player.play_sound_effect(SoundEffect::Leak);
                     }
                 } // client_socket_wrapper found
             } // match client_socket_wrapper

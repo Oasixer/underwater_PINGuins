@@ -37,6 +37,7 @@ fn grab_ip_from_file() -> String {
 }
 
 
+#[derive(Clone)]
 pub struct Config{
     pub timeout_read_ms: u64,
     pub msg_size_bytes: usize,

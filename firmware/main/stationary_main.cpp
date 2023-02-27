@@ -6,8 +6,8 @@
 #include "relay.h"
 #include "fourier.h"
 #include "printing.h"
-#include "tcp_client.h"
 
+#include "tcp_client.h"
 #include <Arduino.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -43,28 +43,27 @@ uint64_t t_last_printed = 0;
 // configurations
 extern config_t config;
 
-TcpClient client;
-
-void stationary_main_setup(){
+void stationary_main_setup(TcpClient& client){
     pinMode(NO_LEAK_PIN, INPUT);
     dac_setup(DAC_PIN, DAC_CLR_PIN, HV_ENABLE_PIN);
     
     setup_relay();
+    client.print("Setup relay\n");
     switch_relay_to_receive();
 
     adc_timer.begin(adc_timer_callback, ADC_PERIOD);
 
     adc_setup();
+    client.print("Setup adc and timer\n");
     fourier_initialize(config.fourier_window_size);
 
-    Serial.begin(9600);
-
-    client = TcpClient();
-    client.setup();
-    client.print("Starting\n");
+    client.print("Setup fourier\n");
+    // client = TcpClient();
+    // client.setup();
+    // client.print("Starting\n");
 }
 
-void detect_frequencies() {
+void detect_frequencies(TcpClient& client) {
     for (uint8_t i = 0; i < N_FREQUENCIES; ++i) {
         if (frequency_magnitudes[i] > config.dft_threshold) {
             // initialize peak finding variables and switch to peak finding state
@@ -107,12 +106,12 @@ void peak_finding(){
     }
 }
 
-void receive_mode_hb(){
+void receive_mode_hb(TcpClient& client){
     if (micros() >= ts_start_listening){  // if not in inactive period
         if (is_peak_finding) {
             peak_finding();
         } else {
-            detect_frequencies();
+            detect_frequencies(client);
         }
     }
 }
@@ -139,7 +138,7 @@ void send_mode_hb(){
     }
 }
 
-void stationary_main_loop(){
+void stationary_main_loop(TcpClient& client){
     if(digitalRead(NO_LEAK_PIN) == THERE_IS_A_LEAK){
         digitalWrite(HV_ENABLE_PIN, LOW);  // turn off high voltage
         switch_relay_to_receive();  // switch to receive mode
@@ -207,7 +206,7 @@ void stationary_main_loop(){
 
         if (listen_for_call_and_respond){
             if (is_currently_receiving){
-                receive_mode_hb();
+                receive_mode_hb(client);
             } else {  // sending
                 send_mode_hb();
             }
