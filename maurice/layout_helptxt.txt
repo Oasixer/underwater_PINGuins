@@ -1,0 +1,28 @@
+module layout:
+
+mod mmaurice
+    setup()
+    loop()
+    struct Maurice
+        sound_player: Soundplayer
+        msg_proc: MsgProc
+
+
+/
+    mod1.rs/
+        pub enum Color {R, G, B}
+
+    mod2.rs/
+        use crate::mod1::Color;
+
+        pub fn get_color() -> Color { Color::R }
+
+    main.rs/
+        mod mod1;
+        mod mod2;
+
+        use mod1::Color;
+        use mod2::get_color;
+
+
+    
