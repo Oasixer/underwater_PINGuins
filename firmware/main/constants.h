@@ -49,7 +49,6 @@ static uint16_t FREQUENCIES[N_FREQUENCIES] = {
 
 /* constants for DAC */
 #define DAC_AMPLITUDE 3600  // this results in full 60V range
-#define DAC_AMPLITUDE 500
 #define DAC_CENTER 11715
 
 /* constants on the board*/

@@ -33,6 +33,58 @@ void TcpClient::setup(){
     }
 }
 
+bool TcpClient::has_cmd_available(){
+    int avail = client.available();
+    if (avail > 0){
+        if (avail > INCOMING_MSG_SIZE_BYTES){
+            Serial.print("Incoming message size: ");
+            Serial.print(avail);
+            Serial.println("larger than expected!");
+            return true;
+        }
+        if (avail == INCOMING_MSG_SIZE_BYTES){
+            return true;
+        }
+        Serial.print("Incoming message size: ");
+        Serial.print(avail);
+        Serial.println("smaller than expected!");
+        return true;
+    }
+    return false;
+}
+
+String TcpClient::get_incoming_cmd(){
+    // client.available() returns the number of bytes available to read
+    if (client.available() > 0) {
+        uint8_t buffer[INCOMING_MSG_SIZE_BYTES];
+        int count = client.read(buffer, INCOMING_MSG_SIZE_BYTES);
+
+        // Find the length of the non-zero bytes in the buffer
+        int len = 0;
+        for (int j = 0; j < count; j++) {
+            if (buffer[j] != 0x00) {
+                len++;
+            }
+            else{
+                break;
+            }
+        }
+
+        // Convert the non-zero bytes to a string
+        String message = "";
+        for (int j = 0; j < len; j++) {
+            message += (char) buffer[j];
+        }
+        Serial.println("Received: " + message);
+        return message;
+    }
+    else {
+        Serial.println("*looks at you with betrayal* You said you had a message for me, but you lied...");
+        delay(5000);
+        return "";
+    }
+}
+
 void TcpClient::poll_reconnect_if_needed(){
     if (!client.connected()){
         if (++consecutive_connection_failures > 5){
@@ -147,7 +199,39 @@ void TcpClient::add_adc_single_reading(uint16_t reading){
     }
 }
 
-void TcpClient::print(String& message){
+void TcpClient::leak(){
+    #define LEAK_DETECT_PIN 14
+    #define UH_OH_LEAK_IF_MATCH_THIS false
+    if (digitalReadFast(LEAK_DETECT_PIN) == UH_OH_LEAK_IF_MATCH_THIS){
+        const uint8_t leak_flag[BYTES_PER_MSG] = {0xFF};
+        const uint16_t n = client.write(leak_flag, BYTES_PER_MSG);
+        if (!check_bytes(n, client)){
+            Serial.println("LEAK DETECTED AND WE HAVE NO COMMS, GOD HELP YOU SIR/MAAM");
+            return false;
+        }
+    }
+        return true;
+    string_msg[0] = 0b10010000;
+    for (auto i=1; i<BYTES_PER_MSG; i++){
+        if (i < message.length()+1){
+            string_msg[i] = message.charAt(i-1);
+        }
+        else if (i < last_str_len + 1){
+            string_msg[i] = 0x00;
+        }
+        else{
+            break;
+        }
+    }
+    last_str_len = message.length();
+    // Serial.println(string_msg[0]);
+    const uint16_t n = client.write(string_msg, BYTES_PER_MSG);
+    // delay(500);
+    if (!check_bytes(n, client)){
+    }
+}
+
+void TcpClient::print(String message){
     string_msg[0] = 0b10010000;
     for (auto i=1; i<BYTES_PER_MSG; i++){
         if (i < message.length()+1){

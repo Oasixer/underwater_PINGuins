@@ -2,18 +2,7 @@
 #define FYDP_TCP_CLIENT_H
 
 #include "src/NativeEthernet/src/NativeEthernet.h"
-// typedef struct{
-// // teensy MAC address. Initialize to zero, as it gets set in teensyMAC automatically.
-//     byte mac[];
-//     IPAddress server_ip;
-//     IPAddress teensy_ip;
-//     IPAddress local_gateway_
-
-// } tcp_client_t;
 #include <Arduino.h>
-
-// void init_tcp_client()
-// = {0x0, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 #define USE_BOTH_SERVERS 1
 #define RESET_ON_FAIL_TO_RECONNECT 1
@@ -29,8 +18,6 @@
 #define MEASURE_SPEED_EVERY_N_MSGS int(MEASURE_SPEED_EVERY_N_MILLIS / MSG_PERIOD_MILLIS)
 
 #define SERVER_PORT 6969
-#define LEAK_DETECT_PIN 14
-#define UH_OH_LEAK_IF_MATCH_THIS false
 
 
 class TcpClient {
@@ -60,10 +47,12 @@ class TcpClient {
         TcpClient();
         void setup();
         void poll_reconnect_if_needed();
-        // void poll_incoming_cmds();
+        bool has_cmd_available();
+        String get_incoming_cmd();
         void poll_send_msgs();
         void add_adc_single_reading(uint16_t reading);
-        void print(String& message);
+        void print(String message);
+        void send_leak_detected_panic_message()
 };
 
 // static uint8_t[SIZE] console_buffer;
