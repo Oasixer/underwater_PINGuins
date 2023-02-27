@@ -33,7 +33,6 @@ void adc_isr() {
 }
 
 void adc_setup(){
-
     ///// ADC0 ////
     adc->adc0->setAveraging(0);    // set number of averages
     adc->adc0->setResolution(12); // set bits of resolution

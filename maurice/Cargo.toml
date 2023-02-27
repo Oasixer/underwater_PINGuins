@@ -2,10 +2,25 @@
 name = "maurice"
 version = "0.1.0"
 edition = "2021"
+default-run = "maurice"
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+chrono = "0.4.23"
 rodio = "0.17.0"
 strum = "0.24.1"
 strum_macros = "0.24.3"
+
+[[bin]]
+name = "maurice"
+path = "src/main.rs"
+
+[[bin]]
+name = "old"
+path = "src/bin/old.rs"
+
+[[bin]]
+name = "poll"
+path = "src/bin/poll.rs"

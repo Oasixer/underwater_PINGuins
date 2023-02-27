@@ -10,6 +10,5 @@ venv/
 *.exe
 */*.avi
 
-
 adc_recordings/
 data_stream/

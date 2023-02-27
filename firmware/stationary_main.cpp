@@ -7,6 +7,7 @@
 #include "fourier.h"
 #include "printing.h"
 
+#include "tcp_client.h"
 #include <Arduino.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -42,24 +43,27 @@ uint64_t t_last_printed = 0;
 // configurations
 extern config_t config;
 
-void stationary_main_setup(){
+void stationary_main_setup(TcpClient& client){
     pinMode(NO_LEAK_PIN, INPUT);
     dac_setup(DAC_PIN, DAC_CLR_PIN, HV_ENABLE_PIN);
     
     setup_relay();
+    client.print("Setup relay\n");
     switch_relay_to_receive();
 
-   adc_timer.begin(adc_timer_callback, ADC_PERIOD);
+    adc_timer.begin(adc_timer_callback, ADC_PERIOD);
 
     adc_setup();
+    client.print("Setup adc and timer\n");
     fourier_initialize(config.fourier_window_size);
 
-    Serial.begin(9600);
-
-    print_message("Starting\n");
+    client.print("Setup fourier\n");
+    // client = TcpClient();
+    // client.setup();
+    // client.print("Starting\n");
 }
 
-void detect_frequencies() {
+void detect_frequencies(TcpClient& client) {
     for (uint8_t i = 0; i < N_FREQUENCIES; ++i) {
         if (frequency_magnitudes[i] > config.dft_threshold) {
             // initialize peak finding variables and switch to peak finding state
@@ -69,7 +73,7 @@ void detect_frequencies() {
             idx_freq_detected = i;
             is_peak_finding = true;
 
-            print_message("After " + uint64ToString(micros() - ts_start_listening) + 
+            client.print("After " + uint64ToString(micros() - ts_start_listening) + 
                 "us of listening, detected freq " + String(FREQUENCIES[i]) + 
                 "Hz, with magnitude " + String(curr_max_magnitude, 0) + ", with magnitudes: [" + 
                 String(frequency_magnitudes[0], 0) + ", " + String(frequency_magnitudes[1], 0) + ", " + 
@@ -86,7 +90,7 @@ void peak_finding(){
         is_currently_receiving = false; // switch to sending state
         ts_start_talking = ts_peak + INACTIVE_DURATION_BEFORE_TALKING;
 
-        // print_message("Finished peak finding at " + uint64ToString(micros()) + 
+        // client.print("Finished peak finding at " + uint64ToString(micros()) + 
         //     ". Peak is" + uint64ToString(ts_peak) + " with magnitude " + 
         //     String(curr_max_magnitude, 0) + "\n");
 
@@ -102,12 +106,12 @@ void peak_finding(){
     }
 }
 
-void receive_mode_hb(){
+void receive_mode_hb(TcpClient& client){
     if (micros() >= ts_start_listening){  // if not in inactive period
         if (is_peak_finding) {
             peak_finding();
         } else {
-            detect_frequencies();
+            detect_frequencies(client);
         }
     }
 }
@@ -119,7 +123,7 @@ void send_data(){
         ts_start_listening = micros() + INACTIVE_DURATION_AFTER_BEEP;
         is_currently_receiving = true; // switch to receiving
 
-        // print_message("sent for " + uint64ToString(micros() - ts_start_talking) + 
+        // client.print("sent for " + uint64ToString(micros() - ts_start_talking) + 
         //     "us. Finished sending at " + uint64ToString(micros()) + 
         //     ". Will start listening at " + uint64ToString(ts_start_talking) + "\n");
 
@@ -134,16 +138,22 @@ void send_mode_hb(){
     }
 }
 
-void stationary_main_loop(){
+void stationary_main_loop(TcpClient& client){
     if(digitalRead(NO_LEAK_PIN) == THERE_IS_A_LEAK){
         digitalWrite(HV_ENABLE_PIN, LOW);  // turn off high voltage
         switch_relay_to_receive();  // switch to receive mode
         adc_timer.end(); // turn off ADC timer so that we only send Leak Detect messages
-        print_message("LEAK DETECTED\n");
+        client.send_leak_detected_panic_message();
     } else {
-        if (Serial.available() > 0){
+        String message= "";
+        if (client.has_cmd_available()){
+            message = client.get_incoming_cmd();
+        }
+        else if (Serial.available() > 0){
+            message = Serial.readStringUntil(message_terminator);
+        }
+        if (message.length() > 0){
             // Read the incoming message from the serial port
-            String message = Serial.readStringUntil(message_terminator);
 
             // Split the message into tokens using the delimiter
             int pos = 0;
@@ -157,54 +167,52 @@ void stationary_main_loop(){
 
                 // Extract the field value based on the token prefix
                 if (token.startsWith("h")){  // just a ping
-                    print_message("hi\n");
-
+                    client.print("hi\n");
                 } else if (token.startsWith("s")){// stop trying to detect frequencies;
                     listen_for_call_and_respond = false;
                     switch_relay_to_receive();
                     adc_timer.begin(adc_timer_callback, ADC_PERIOD);
-                    print_message("Stopped\n");
-
+                    client.print("Stopped\n");
                 } else if (token.startsWith("g")) { // start trying to detect frequencies
                     listen_for_call_and_respond = true;
                     switch_relay_to_receive();
                     adc_timer.begin(adc_timer_callback, ADC_PERIOD);
                     is_peak_finding = false;
                     is_currently_receiving = true;
-                    print_message("Started\n");
+                    client.print("Started\n");
 
                 } else if (token.startsWith("f")) {  // change my frequency
                     config.my_frequency = (uint16_t)token.substring(1).toInt();
-                    print_message("Changed my frequency to " + String(config.my_frequency) + "\n");
+                    client.print("Changed my frequency to " + String(config.my_frequency) + "\n");
 
                 } else if (token.startsWith("N")) {  // change window size
                     config.fourier_window_size = (uint16_t)token.substring(1).toInt();
                     config.micros_to_find_peak = ADC_PERIOD * config.fourier_window_size;
                     config.micros_send_duration = ADC_PERIOD * config.fourier_window_size;
-                    print_message("Changed window size to " + String(config.fourier_window_size) + "\n");
+                    client.print("Changed window size to " + String(config.fourier_window_size) + "\n");
 
                 } else if (token.startsWith("t")) {
                     config.dft_threshold = (uint32_t)token.substring(1).toInt();
-                    print_message("Changed DFT threshold to " + String(config.dft_threshold) + "\n");
+                    client.print("Changed DFT threshold to " + String(config.dft_threshold) + "\n");
 
                 } else if (token.startsWith("r")) { // use rising edge 
                     uint8_t use_rising_edge = (uint8_t)token.substring(1).toInt();
                     config.use_rising_edge = use_rising_edge > 0;
-                    print_message("Use rising edge set to " + String(config.use_rising_edge) + "\n");
+                    client.print("Use rising edge set to " + String(config.use_rising_edge) + "\n");
                 }
             }
         }
 
         if (listen_for_call_and_respond){
             if (is_currently_receiving){
-                receive_mode_hb();
+                receive_mode_hb(client);
             } else {  // sending
                 send_mode_hb();
             }
         }
         
         if (micros() - t_last_printed > 1000000){
-            print_message(uint64ToString(fourier_counter) + " Hz, Last Value: " + 
+            client.print(uint64ToString(fourier_counter) + " Hz, Last Value: " + 
                 String(last_reading) + ", magnitudes: [" + 
                 String(frequency_magnitudes[0], 0) + ", " + String(frequency_magnitudes[1], 0) + ", " + 
                 String(frequency_magnitudes[2], 0) + ", " + String(frequency_magnitudes[3], 0) + ", " + 

@@ -6,7 +6,7 @@
 #include "relay.h"
 #include "fourier.h"
 #include "printing.h"
-#include "TcpClient.h"
+#include "tcp_client.h"
 
 #include <Arduino.h>
 #include <stdint.h>
@@ -57,6 +57,7 @@ void rov_main_setup(TcpClient& client){
     fourier_initialize(config.fourier_window_size);
 
     // Serial.begin(9600);
+    client.print("Started ROV main\n");
 
     config.my_frequency = 25000;
 }
