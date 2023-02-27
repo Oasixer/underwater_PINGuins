@@ -1,7 +1,8 @@
 #ifndef FYDP_ROV_MAIN_H
 #define FYDP_ROV_MAIN_H
 
-void rov_main_setup();
-void rov_main_loop();
+#include "tcp_client.h"
+void rov_main_setup(TcpClient& client);
+void rov_main_loop(TcpClient& client);
 
 #endif

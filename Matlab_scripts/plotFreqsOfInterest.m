@@ -13,30 +13,30 @@ for f = 1:length(freqsOfInterest)
     dftData(f, :) = slidingDFTatFreq(signal, N, fs, freqsOfInterest(f));
 end
 
-% %% plot all freqsOfInterest on the same graph
-% figure
-% for f = 1:length(freqsOfInterest)
-%     plot(t, dftData(f, :), 'DisplayName', num2str(freqsOfInterest(f)) + "Hz"); hold on;
-% end
-% legend();
-% xlabel("Time [s]");
-% ylabel("Freq amplitude");
-% title("Freqs of interest over time");
-
-%% plot each of freqsOfInterest on its own 
+%% plot all freqsOfInterest on the same graph
 figure
 for f = 1:length(freqsOfInterest)
-    subplot(3, 4, f*2-1)
-    plot(t, dftData(f, :))
-    xlabel("Time [s]")
-    ylabel("Freq amplitude")
-    title(num2str(freqsOfInterest(f)) + " Hz over time")
-    subplot(3, 4, f*2)
-    histogram(dftData(f, :), nBins)
-    xlabel("Amplitude")
-    ylabel("Num Occurance")
-    title(num2str(freqsOfInterest(f)) + " Hz histogram")
+    plot(t, dftData(f, :), 'DisplayName', num2str(freqsOfInterest(f)) + "Hz"); hold on;
 end
+legend();
+xlabel("Time [s]");
+ylabel("Freq amplitude");
+title("Freqs of interest over time");
+
+%% plot each of freqsOfInterest on its own 
+% figure
+% for f = 1:length(freqsOfInterest)
+%     subplot(3, 4, f*2-1)
+%     plot(t, dftData(f, :))
+%     xlabel("Time [s]")
+%     ylabel("Freq amplitude")
+%     title(num2str(freqsOfInterest(f)) + " Hz over time")
+%     subplot(3, 4, f*2)
+%     histogram(dftData(f, :), nBins)
+%     xlabel("Amplitude")
+%     ylabel("Num Occurance")
+%     title(num2str(freqsOfInterest(f)) + " Hz histogram")
+% end
 
 % %% plot histogram of all data
 % figure
