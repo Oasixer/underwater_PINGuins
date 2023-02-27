@@ -73,4 +73,8 @@ static const char message_terminator = '\n';
 /* constants for saving trip duration*/
 #define MAX_N_TRIPS 500
 
+/* constants for calculating distance*/
+#define SPEED_SOUND 1351.89889440064462178270
+#define MARCO_POLO_TIME_DELAY_US 200056.07745910956873558462
+
 #endif

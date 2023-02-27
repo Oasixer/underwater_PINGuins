@@ -103,10 +103,10 @@ void reset_send_receive(TcpClient& client){
         ts_response_timeout = ts_start_talking + config.response_timeout_duration;
 
     } else {  // did all the commanded send receives
-        client.print("Finished send receives " + String(n_talks_done) + " times. Trip times in us are:\n");
+        client.print("Finished send receives " + String(n_talks_done) + " times. Predicted distances (m) are:\n");
         String msg = "[";
         for (uint16_t i = 0; i < n_talks_done; ++i){
-            msg += uint64ToString(trip_times[i]); 
+            msg += String(((float)trip_times[i] - MARCO_POLO_TIME_DELAY_US)/2 / 1000000 * SPEED_SOUND, 3); 
             msg += "; ";
             if (i % 10 == 9){
                 client.print(msg + "\n");
