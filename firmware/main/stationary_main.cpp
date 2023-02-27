@@ -41,6 +41,8 @@ uint64_t t_last_printed = 0;
 // configurations
 extern config_t config;
 
+TcpClient client;
+
 void stationary_main_setup(){
     pinMode(NO_LEAK_PIN, INPUT);
     dac_setup(DAC_PIN, DAC_CLR_PIN, HV_ENABLE_PIN);
@@ -56,6 +58,8 @@ void stationary_main_setup(){
     Serial.begin(9600);
 
     Serial.printf("Starting\n");
+    client = TcpClient();
+    client.setup();
 }
 
 void detect_frequencies() {
@@ -120,6 +124,10 @@ void receive_mode_hb(){
     }
 }
 
+void println(String msg){
+    
+}
+
 void send_data(){
     if (micros() - ts_start_talking < config.micros_send_duration){ // keep sending
         dac_set_analog_float(sinf(2 * M_PI * config.my_frequency  / 1000000 * (float)(micros() % (1000000 / config.my_frequency))));
@@ -154,9 +162,17 @@ void stationary_main_loop(){
         adc_timer.end(); // turn off ADC timer so that we only send Leak Detect messages
         Serial.printf("LEAK DETECTED\n");
     } else {
+
+        String message= "";
+        if (client.has_command_available()){
+            message = client.read_command_str();
+        }
         if (Serial.available() > 0){
+            message = Serial.readStringUntil(message_terminator);
+        }
+
+        if (message.length() > 0){
             // Read the incoming message from the serial port
-            String message = Serial.readStringUntil(message_terminator);
 
             // Split the message into tokens using the delimiter
             int pos = 0;

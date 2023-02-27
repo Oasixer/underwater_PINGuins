@@ -66,12 +66,6 @@ class TcpClient {
         void print(String& message);
 };
 
-// void setup_tcp_client();
-// void netowrking_hb();
-// void add_adc_single_reading(uint16_t reading);
-// void networking_print(string message);
-
-// static uint8_t[SIZE] adc_buffer;
 // static uint8_t[SIZE] console_buffer;
 void teensyMAC(uint8_t *mac) {
     for(uint8_t by=0; by<2; by++) mac[by]=(HW_OCOTP_MAC1 >> ((1-by)*8)) & 0xFF;

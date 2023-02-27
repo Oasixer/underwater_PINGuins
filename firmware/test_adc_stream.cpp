@@ -9,8 +9,6 @@
 #define PRINT_MSG_OVERRUN 1           // uncomment to print info when msg overrun detected
 // #define DISCONNECT_MSG_OVERRUN 1   // uncomment to disconnect on msg overrun
 
-#define USE_BOTH_SERVERS 1
-
 IPAddress server_ip_k(192, 168, 1, 70); //IP address target
 IPAddress server_ip_a(192, 168, 1, 123); //IP address target
 IPAddress* server_ip_try = &server_ip_k;
@@ -21,8 +19,6 @@ IPAddress myDns(192, 168, 0, 1);
 // teensy MAC address. Initialize to zero, as it gets set in teensyMAC automatically.
 byte mac[] = {0x0, 0x00, 0x00, 0x00, 0x00, 0x00};
 EthernetClient client;
-
-
 
 const int readPeriodMicros = 2; // us
 
@@ -330,17 +326,6 @@ bool test_adc_stream_loop(bool connection_active){
         Serial.print(".");
         #endif
         // delayMicroseconds(2);
-    }
-    return true;
-}
-
-bool check_bytes(uint16_t n, EthernetClient& client){
-    if (n != BYTES_PER_MSG){
-        Serial.print(n);
-        Serial.println(" bytes sent => failed to send msg => disconnecting");
-        client.close();
-        delay(8000);
-        return false;
     }
     return true;
 }

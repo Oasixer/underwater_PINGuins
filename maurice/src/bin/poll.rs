@@ -3,11 +3,85 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::thread;
 use std::time::Duration;
+use std::fs;
+use std::path::Path;
 
 fn main() {
-    let mut latest_file = find_latest_file().expect("Failed to find latest file");
-    let mut last_line = String::new();
-    let mut repeat_count = 0;
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() != 2 {
+        println!("Please provide a 2-character string as a command-line argument.");
+        return;
+    }
+
+    let input = &args[1];
+
+    if input.len() != 2 {
+        println!("Please provide a 2-character string to choose teensy MAC");
+        return;
+    }
+
+    // Get the current working directory
+    let current_dir = env::current_dir().unwrap();
+
+    let data_stream_dir = "../data_stream";//04e9e5140f14/cli_data";
+    let current_dir = format!("{}/{}", current_dir.to_str().unwrap(), data_stream_dir);
+
+
+    let mac_subdirs = match fs::read_dir(&current_dir) {
+        Ok(mac_subdirs) => mac_subdirs,
+        Err(_) => {
+            println!("Error: Unable to read directory contents.");
+            return;
+        }
+    };
+
+    let mut matching_subdir = None;
+
+    for subdir in mac_subdirs {
+        let subdir = match subdir {
+            Ok(subdir) => subdir,
+            Err(_) => continue,
+        };
+
+        let subdir_name = match subdir.file_name().into_string() {
+            Ok(subdir_name) => subdir_name,
+            Err(_) => continue,
+        };
+
+        println!("subdir_name: {}", subdir_name);
+
+        if subdir_name.ends_with(input) {
+            matching_subdir = Some(subdir_name);
+            println!("found");
+            break;
+        }
+        println!("?");
+    }
+    // match matching_subdir {
+    //     Some(subdir_name) => println!("Matching subdir name: {}", subdir_name),
+    //     None => panic!("Error: No MAC subdirectory found with name ending in '{}'", input),
+    // }
+    if matching_subdir.is_none(){
+        println!("Error: No MAC subdirectory found with name ending in '{}'", input);
+        panic!("exiting");
+    }
+    let matching_subdir = matching_subdir.unwrap();
+
+
+
+    let final_dir = format!("{}/{}/{}", &current_dir, &matching_subdir, "cli_data");
+
+    let path = Path::new(&final_dir);
+    println!("Directory path: {}", path.display());
+    if path.is_dir() {
+        println!("Directory exists");
+    } else {
+        println!("Directory does not exist");
+    }
+    let mut latest_file = find_latest_file(&final_dir).expect("Failed to find latest file");
+    // let mut last_line = String::new();
+    // let mut repeat_count = 0;
     loop {
         // Open the file for reading
         let file = File::open(&latest_file).expect("Failed to open file");
@@ -33,7 +107,7 @@ fn main() {
             }
 
             // Check for a new file
-            match find_latest_file() {
+            match find_latest_file(&final_dir) {
                 Ok(path) if path != latest_file => {
                     latest_file = path;
                     break;
@@ -47,15 +121,8 @@ fn main() {
     }
 }
 
-fn find_latest_file() -> Result<String, std::io::Error> {
-    // Get the current working directory
-    let current_dir = env::current_dir()?;
-
-    let mac = "data_stream/04e9e5140f14/cli_data";
-    let current_dir = format!("{}/{}", current_dir.to_str().unwrap(), mac);
-
-    // Get a list of all files in the current directory
-    let mut files = std::fs::read_dir(current_dir)?
+fn find_latest_file(dir: &str) -> Result<String, std::io::Error> {
+    let mut files = std::fs::read_dir(dir)?
         .map(|res| res.map(|entry| entry.path()))
         .collect::<Result<Vec<_>, std::io::Error>>()?;
 
@@ -65,6 +132,7 @@ fn find_latest_file() -> Result<String, std::io::Error> {
 
     // Find the first file with an ISO 8601 conforming filename
     for file in files {
+        println!("file: {:?}", file);
         if let Some(filename) = file.file_name().and_then(|n| n.to_str()) {
             if is_iso8601_filename(filename) {
                 return Ok(file.to_str().unwrap().to_string());

@@ -85,6 +85,9 @@ void detect_frequencies() {
     }
 }
 
+// g 100
+// 
+
 void reset_send_receive(){
     Serial.printf("ts_peak: %i, ts_start_talking: %i, ts_start_listening: %i, ts_response_timeout: %i\n", (uint32_t)ts_peak, (uint32_t)ts_start_talking, (uint32_t)ts_start_listening, (uint32_t)ts_response_timeout);
     uint64_t trip_time = ts_peak - ts_start_talking;
