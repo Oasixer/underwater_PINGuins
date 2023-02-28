@@ -42,6 +42,7 @@ extern config_t config;
 
 // buffer to store trip times
 #define MAX_N_TRIPS 500
+float measured_distances[MAX_N_TRIPS] = {0};
 uint64_t trip_times[MAX_N_TRIPS] = {0};
 uint16_t n_talks_done = 0;
 uint16_t n_talks_command = 0;
@@ -89,8 +90,10 @@ void detect_frequencies(TcpClient& client) {
 
 void reset_send_receive(TcpClient& client){
     uint64_t trip_time = ts_peak - ts_start_talking;
-    trip_times[n_talks_done] = trip_time; // store for later
-    client.print("Trip Time: " + uint64ToString(trip_time) + "us\n");
+    trip_times[n_talks_done] = trip_time;
+    measured_distances[n_talks_done] = ((float)trip_time - MARCO_POLO_TIME_DELAY_US) / 2 / 1000000 * SPEED_SOUND; // store for later
+    client.print("Trip time: " + uint64ToString(trip_time) + "us. Measured Distance: " + 
+    String(measured_distances[n_talks_done], 3) + "m\n");
 
     curr_max_magnitude = 0;  // reset to zero for next time
     is_peak_finding = false;  // start next time not in peak finding state
@@ -103,8 +106,18 @@ void reset_send_receive(TcpClient& client){
         ts_response_timeout = ts_start_talking + config.response_timeout_duration;
 
     } else {  // did all the commanded send receives
-        client.print("Finished send receives " + String(n_talks_done) + " times. Trip times in us are:\n");
+        client.print("Finished send receives " + String(n_talks_done) + " times. Measured distances (m) are:\n");
         String msg = "[";
+        for (uint16_t i = 0; i < n_talks_done; ++i){
+            msg += String(measured_distances[i], 3); 
+            msg += "; ";
+            if (i % 10 == 9){
+                client.print(msg + "\n");
+                msg = "";
+            }
+        }
+        client.print(msg + "]\nTrip times are: \n");
+        msg = "[";
         for (uint16_t i = 0; i < n_talks_done; ++i){
             msg += uint64ToString(trip_times[i]); 
             msg += "; ";
