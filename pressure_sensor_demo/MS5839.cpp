@@ -1,30 +1,26 @@
 #include "MS5839.h"
 
-//SoftWire soft_i2c(SDA_PIN, SCL_PIN);
-// These buffers must be at least as large as the largest read or write you perform.
-char swTxBuffer[16];
-char swRxBuffer[16];
-
 void MS5839_init(void){
 
-    Wire.begin();
+    Wire1.begin();
 
     //Send reset command
-    Wire.beginTransmission(I2C_ADDRESS);
-    Wire.write(uint8_t(RESET_COMMAND));
-    Wire.endTransmission();
+    Wire1.beginTransmission(I2C_ADDRESS);
+    Wire1.write(uint8_t(RESET_COMMAND));
+    Wire1.endTransmission();
+    delay(10); // wait for reset to finish (stolen from https://github.com/bluerobotics/BlueRobotics_MS5837_Library/blob/master/src/MS5837.cpp)
 
     //Read PROM
     for (uint8_t i = 0; i < 7; i++){
-      Wire.beginTransmission(I2C_ADDRESS);
-      Wire.write(uint8_t(PROM_READ_COMMAND) | (i << 1));
-      Wire.endTransmission();
+      Wire1.beginTransmission(I2C_ADDRESS);
+      Wire1.write(uint8_t(PROM_READ_COMMAND) | (i << 1));
+      Wire1.endTransmission();
 
       MS5839_struct.C[i] = 0;
-      Wire.requestFrom(I2C_ADDRESS, 2);
-      while(Wire.available()){
+      Wire1.requestFrom(I2C_ADDRESS, 2);
+      while(Wire1.available()){
           MS5839_struct.C[i] <<= 8; //shift last byte over
-          MS5839_struct.C[i] |= uint16_t(Wire.read());
+          MS5839_struct.C[i] |= uint16_t(Wire1.read());
       }
     }
   for (int i = 0; i < 7; i++){
@@ -41,23 +37,23 @@ void MS5839_start_conversion(measure_t type, resolution_t resolution){
     // Set conversion resolution
     conversion_cmd |= (uint8_t)resolution <<1;
     // Send it!
-    Wire.beginTransmission(I2C_ADDRESS);
-    Wire.write(conversion_cmd);
-    Wire.endTransmission();
+    Wire1.beginTransmission(I2C_ADDRESS);
+    Wire1.write(conversion_cmd);
+    Wire1.endTransmission();
 }
 
 // TODO: Check when we last started a conversion! things break if you read before conversion finishes
 int32_t MS5839_read_conversion(void){
     //request result
-    Wire.beginTransmission(I2C_ADDRESS);
-    Wire.write(uint8_t(READ_COMMAND));
-    Wire.endTransmission();
+    Wire1.beginTransmission(I2C_ADDRESS);
+    Wire1.write(uint8_t(READ_COMMAND));
+    Wire1.endTransmission();
     //read result
     int32_t value = 0;
-    Wire.requestFrom(I2C_ADDRESS, 3);
-    while(Wire.available()){
+    Wire1.requestFrom(I2C_ADDRESS, 3);
+    while(Wire1.available()){
         value <<= 8; //shift last byte over
-        value |= Wire.read();
+        value |= Wire1.read();
 
     }
 
