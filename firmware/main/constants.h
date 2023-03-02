@@ -41,8 +41,9 @@ static uint16_t FREQUENCIES[N_FREQUENCIES] = {
 };
 
 
-#define INACTIVE_DURATION_AFTER_BEEP 195000
-#define INACTIVE_DURATION_BEFORE_TALKING 200000
+// #define INACTIVE_DURATION_AFTER_BEEP 195000
+// #define INACTIVE_DURATION_BEFORE_TALKING 200000
+#define MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD 5000
 
 /* constants for message */
 #define MSG_LENGTH 50  // bits
@@ -76,5 +77,8 @@ static const char message_terminator = '\n';
 /* constants for calculating distance*/
 #define SPEED_SOUND 1351.89889440064462178270
 #define MARCO_POLO_TIME_DELAY_US 200056.07745910956873558462
+
+/* constants for float value comparison*/
+#define EPSILON 0.000001
 
 #endif

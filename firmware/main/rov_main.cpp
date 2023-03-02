@@ -69,7 +69,7 @@ void detect_frequencies(TcpClient& client) {
             // initialize peak finding variables and switch to peak finding state
             curr_max_magnitude = frequency_magnitudes[i];
             ts_peak = micros();
-            ts_peak_finding_timeout = micros() + config.micros_to_find_peak;
+            ts_peak_finding_timeout = micros() + config.duration_to_find_peak;
             idx_freq_detected = i;
             is_peak_finding = true;
 
@@ -102,7 +102,7 @@ void reset_send_receive(TcpClient& client){
     switch_relay_to_send();
 
     if (++n_talks_done < n_talks_command){  // still have to send receive more
-        ts_start_talking = micros() + INACTIVE_DURATION_BEFORE_TALKING;
+        ts_start_talking = micros() + config.period;
         ts_response_timeout = ts_start_talking + config.response_timeout_duration;
 
     } else {  // did all the commanded send receives
@@ -165,12 +165,22 @@ void rov_send_mode_hb(TcpClient& client){
             dac_set_analog_float(sinf(2 * M_PI * config.my_frequency  / 1000000 * (float)(micros() % (1000000 / config.my_frequency))));
 
         } else { // finished beep
-            ts_start_listening = micros() + INACTIVE_DURATION_AFTER_BEEP;
+            ts_start_listening = micros() + config.period - MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD;
             is_currently_receiving = true; // switch to receiving
             switch_relay_to_receive();
             adc_timer.begin(adc_timer_callback, ADC_PERIOD);
         }
     }
+}
+
+coord_3d_t get_coord_from_string(String str){
+    int idx_delimiter_1 = str.indexOf(',');
+    int idx_delimiter_2 = str.indexOf(',', idx_delimiter_1 + 1);
+    return coord_3d_t{
+        atof(token.substring(0, idx_delimiter_1)),
+        atof(token.substring(idx_delimiter_1 + 1, idx_delimiter_2)),
+        atof(token.substring(idx_delimiter_2 + 1, str.length())),
+    };
 }
 
 void rov_main_loop(TcpClient& client){
@@ -230,7 +240,7 @@ void rov_main_loop(TcpClient& client){
 
                 } else if (token.startsWith("N")) {  // change window size
                     config.fourier_window_size = (uint16_t)token.substring(1).toInt();
-                    config.micros_to_find_peak = ADC_PERIOD * config.fourier_window_size;
+                    // config.duration_to_find_peak = ADC_PERIOD * config.fourier_window_size;
                     config.micros_send_duration = ADC_PERIOD * config.fourier_window_size;
                     client.print("Changed window size to " + String(config.fourier_window_size) + "\n");
 
@@ -238,9 +248,9 @@ void rov_main_loop(TcpClient& client){
                     config.dft_threshold = (uint32_t)token.substring(1).toInt();
                     client.print("Changed DFT threshold to " + String(config.dft_threshold) + "\n");
 
-                } else if (token.startsWith("o")) { // set timeout
-                    config.response_timeout_duration = (uint32_t)token.substring(1).toInt();
-                    client.print("Changed response timeout to " + String(config.response_timeout_duration) + "us after talking starts\n");
+                // } else if (token.startsWith("o")) { // set timeout
+                //     config.response_timeout_duration = (uint32_t)token.substring(1).toInt();
+                //     client.print("Changed response timeout to " + String(config.response_timeout_duration) + "us after talking starts\n");
 
                 } else if (token.startsWith("c")){ // transmit continuously
                     uint32_t millis_to_continuously_transmit = (uint32_t)token.substring(1).toInt();
@@ -252,6 +262,45 @@ void rov_main_loop(TcpClient& client){
                     uint8_t use_rising_edge = (uint8_t)token.substring(1).toInt();
                     config.use_rising_edge = use_rising_edge > 0;
                     client.print("Use rising edge set to " + String(config.use_rising_edge) + "\n");
+
+                } else if (token.startsWith("C")) { // input of node coordinates
+                    int pos2 = 1;
+                    for (uint8_t i = 0; i < N_ALL_NODES; ++i){
+                        int next_pos2 = token.indexOf(';', pos2);
+                        if (next_pos2 == -1) {
+                            next_pos2 = token.length();
+                        }
+                        coordinates[i] = get_coord_from_string(token.substring(pos2, next_pos2));
+                        pos2 = next_pos2 + 1;
+                    }
+                    String new_coord_string = "Updated coordinates: [";
+                    for (uint8_t i = 0; i < N_ALL_NODES; ++i){
+                        new_coord_string += "[" + String(coordinates[i].x, 2) + ", " + String(coordinates[i].y, 2) + ", " + String(coordinates[i].z, 2) + "]";
+                    }
+                    client.print(new_coord_string + "]\n");
+
+                } else if (token.startsWith("i")) { // change identificiation type
+                    uint8_t integrate_freq_domain = (uint8_t)token.substring(1).toInt();
+                    config.integrate_freq_domain = integrate_freq_domain > 0;
+                    client.print("Integrate freq domain set to " + String(config.integrate_freq_domain) + "\n");
+
+                } else if (token.startsWith("p")) { // change period
+                    uint32_t period_ms = (uint32_t)token.substring(1).toInt();
+                    config.period = period_ms * 1000;
+                    config.response_timeout_duration = 2 * config.period;
+                    client.print("Changed period to " + String(period_ms) + "ms\n");
+                                        
+                } else if (token.startsWith("v")) { // change speed of sound
+                    config.speed_of_sound = atof(token.substring(1));
+                    client.print("Changed speed of sound to " + String(config.speed_of_sound) + "m/s\n");
+
+                } else if (token.startsWith("b")) { // change marco polo time delay
+                    config.marco_polo_time_delay = atof(token.substring(1));
+                    client.print("Changed marco polo time delay to " + String(config.speed_of_sound) + "us\n");
+
+                } else if (token.startsWith("d")) { // change duration to find peak
+                    config.duration_to_find_peak = (uint16_t)token.substring(1).toInt();
+                    client.print("Changed duration to find peak to " + String(config.duration_to_find_peak) + "us\n");
                 }
             }
         }
@@ -270,6 +319,11 @@ void rov_main_loop(TcpClient& client){
             } else {  // sending
                 rov_send_mode_hb(client);
             }
+
+        } else if (find_my_position){
+            // TODO: check if no longer need to find my position
+            
+        }
 
         } // else do nothing
     }

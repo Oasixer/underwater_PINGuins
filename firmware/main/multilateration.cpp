@@ -2,10 +2,20 @@
 
 void get_points_of_intersection(coord_2d_t *intersections, float dists[2], coord_2d_t coords[2]){
     float diff = dist_between_points_2d(coords[0], coords[1]);
-    float angle = atan2f(coords[1].y - coords[0].y, coords[1].x - coords[0].x);
+    float angle;
+    if (fabsf(coords[1].x] - coords[0].x) >= EPSILON && fabsf(coords[1].y] - coords[0].y]) >= EPSILON){
+        angle = atan2f(coords[1].y - coords[0].y, coords[1].x - coords[0].x);
+    } else {
+        angle = 0;
+    }
 
     float x_local = (powf(dists[0], 2) - powf(dists[1], 2) + powf(diff, 2)) / (2 * diff);
-    float y1_local = sqrtf(powf(dists[0], 2) - powf(x_local, 2));
+    float y1_local;
+    if (dists[0] > fabsf(x_local)){
+        y1_local = sqrtf(powf(dists[0], 2) - powf(x_local, 2));
+    } else {
+        y1_local = 0.0;
+    }
     float y2_local = -y1_local;
 
     intersections[0].x = x_local*cosf(angle) - y1_local*sinf(angle) + coords[0].x;
@@ -16,6 +26,13 @@ void get_points_of_intersection(coord_2d_t *intersections, float dists[2], coord
 }
 
 coord_3d_t multilaterate(coord_3d_t node_coords_3d[N_ALL_NODES], float dists_3d[N_ALL_NODES], float curr_depth, float og_depth){
+    // ensure that dists are not negative
+    for (uint8_t i = 0; i < N_ALL_NODES; ++i){
+        if (dists_3d[i] < 0.0){
+            dists_3d[i] = 0.0;
+        }
+    }
+
     // get 2d projections
     float dists_2d[N_ALL_NODES];
     for (uint8_t i = 0; i < N_ALL_NODES; ++i){

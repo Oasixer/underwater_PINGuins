@@ -1,5 +1,5 @@
 %% constants
-N = 1250;
+N = 500;
 fs = 500000;
 timeStep = 1/fs;
 resolution = fs/N;
@@ -13,11 +13,12 @@ period = 200;
 threshold = 200;
 
 %% data
-file = "d4.7_10_1250_200"
-data = readUint16File("../adc_recordings/Feb22/" + file)';
+file = "dist-4-500-2"
+data = readUint16File("../adc_recordings/Feb23/" + file)';
 
 %% plot
-animateSlidingDFT(data, N, stepSize, fs, frameDuration, file)
+plotFreqsOfInterest(data, N, fs, freqsOfInterest, nBins)
+% animateSlidingDFT(data, N, stepSize, fs, frameDuration, file)
 % plotDataAndHistogram(data, timeStep, nBins);
 % fullFFT(data, fs);
 

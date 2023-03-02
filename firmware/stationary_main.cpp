@@ -69,7 +69,7 @@ void detect_frequencies(TcpClient& client) {
             // initialize peak finding variables and switch to peak finding state
             curr_max_magnitude = frequency_magnitudes[i];
             ts_peak = micros();
-            ts_peak_finding_timeout = micros() + config.micros_to_find_peak;
+            ts_peak_finding_timeout = micros() + config.duration_to_find_peak;
             idx_freq_detected = i;
             is_peak_finding = true;
 
@@ -187,7 +187,7 @@ void stationary_main_loop(TcpClient& client){
 
                 } else if (token.startsWith("N")) {  // change window size
                     config.fourier_window_size = (uint16_t)token.substring(1).toInt();
-                    config.micros_to_find_peak = ADC_PERIOD * config.fourier_window_size;
+                    config.duration_to_find_peak = ADC_PERIOD * config.fourier_window_size;
                     config.micros_send_duration = ADC_PERIOD * config.fourier_window_size;
                     client.print("Changed window size to " + String(config.fourier_window_size) + "\n");
 
