@@ -8,6 +8,8 @@
 #define ADC_PERIOD 2
 #define MAX_SZ_WINDOW 1250  // Samples
 
+// #define MSGS_IN_BUF 100
+
 #define N_STATIONARY 3  // number of stationary nodes
 #define N_ALL_NODES 4  // number of all nodes (N_STATIONARY + 1)
 #define I_ROV 0  // Index of the ROV in all arrays

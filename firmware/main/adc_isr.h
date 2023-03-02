@@ -4,7 +4,8 @@
 #include "constants.h"
 
 void adc_isr();
-void adc_setup();
+uint16_t* adc_setup();
 void adc_timer_callback();
+float* get_frequency_magnitudes();
 
 #endif

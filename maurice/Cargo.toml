@@ -25,3 +25,7 @@ path = "src/bin/old.rs"
 [[bin]]
 name = "poll"
 path = "src/bin/poll.rs"
+
+[[bin]]
+name = "passthrough"
+path = "src/bin/passthrough.rs"

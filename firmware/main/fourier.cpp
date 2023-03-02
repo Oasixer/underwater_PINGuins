@@ -175,14 +175,14 @@ void fourier_print_ring_buffer(){
     Serial.println("");
 }
 
-void test_fourier_speed_main(){  
-    unsigned long start_micros = micros();
-    unsigned long fourier_counter = 0;
-    float magnitudes[N_FREQUENCIES];
-    fourier_initialize(500);
-    while (micros() - start_micros < 10000000){
-        fourier_update(magnitudes, 69);
-        fourier_counter++;
-    }
-    Serial.printf("In 10 seconds, i managed to fourier %i times. My safety factor is %f\n", fourier_counter, ((float)fourier_counter)/5000000);
-}
+// void test_fourier_speed_main(){  
+//     unsigned long start_micros = micros();
+//     unsigned long fourier_counter = 0;
+//     float magnitudes[N_FREQUENCIES];
+//     fourier_initialize(500);
+//     while (micros() - start_micros < 10000000){
+//         fourier_update(magnitudes, 69);
+//         fourier_counter++;
+//     }
+//     Serial.printf("In 10 seconds, i managed to fourier %i times. My safety factor is %f\n", fourier_counter, ((float)fourier_counter)/5000000);
+// }

@@ -16,6 +16,6 @@ typedef struct{
     bool use_rising_edge;
 } config_t;
 
-config_t config = {500, 25000, 18000, 1000, 1000, 400000, true};
+// config_t config = {500, 25000, 18000, 1000, 1000, 400000, true};
 
 #endif

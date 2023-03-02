@@ -12,6 +12,8 @@
             ],
             "intelliSenseMode": "gcc-x64",
             "includePath": [
+                "${workspaceFolder}/firmware/main/src",
+                "${workspaceFolder}/firmware/main",
                 "C:\\Users\\kijiji\\AppData\\Local\\Temp\\arduino\\sketch-54F9BC2D875549272115E00C190D6604\\pch",
                 "C:\\Users\\kijiji\\AppData\\Local\\Arduino15\\packages\\teensy\\hardware\\avr\\1.57.2\\cores\\teensy4",
                 "C:\\Users\\kijiji\\AppData\\Local\\Arduino15\\packages\\teensy\\hardware\\avr\\1.57.2\\libraries\\SPI",
