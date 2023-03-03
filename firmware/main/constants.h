@@ -17,12 +17,12 @@
 #define N_FREQUENCIES 6  // number of frequencies
 
 /* Define different frequencies to encode messages*/
-#define F_LOW 10000  // Hz
+#define F_LOW 11000  // Hz
 #define F_HIGH 18000  // Hz
-#define F_STATIONARY_1 26000  // Hz
-#define F_STATIONARY_2 34000  // Hz
-#define F_STATIONARY_3 42000  // Hz
-#define F_ALL 48000  // Hz
+#define F_STATIONARY_1 25000  // Hz
+#define F_STATIONARY_2 35000  // Hz
+#define F_STATIONARY_3 41000  // Hz
+#define F_ALL 49000  // Hz
 
 enum FREQ_INDICES{
     IDX_F_LOW,

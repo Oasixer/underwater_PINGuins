@@ -98,7 +98,8 @@ void StationaryMain::loop(){
                 // Extract the field value based on the token prefix
                 if (token.startsWith("h")){    // just a ping
                     client->print("hi\n");
-                } else if (token.startsWith("s")){// stop trying to detect frequencies;
+
+                } else if (token.startsWith("x")){// stop trying to detect frequencies;
                     listen_for_call_and_respond = false;
                     switch_relay_to_receive();
                     adc_timer.begin(adc_timer_callback, ADC_PERIOD);
@@ -109,6 +110,7 @@ void StationaryMain::loop(){
                     adc_timer.begin(adc_timer_callback, ADC_PERIOD);
                     is_peak_finding = false;
                     is_currently_receiving = true;
+                    listener->begin(micros());
                     client->print("Started\n");
 
                 } else if (token.startsWith("f")) {    // change my frequency
@@ -117,7 +119,6 @@ void StationaryMain::loop(){
 
                 } else if (token.startsWith("N")) {    // change window size
                     config->fourier_window_size = (uint16_t)token.substring(1).toInt();
-                    config->duration_to_find_peak = ADC_PERIOD * config->fourier_window_size;
                     config->micros_send_duration = ADC_PERIOD * config->fourier_window_size;
                     client->print("Changed window size to " + String(config->fourier_window_size) + "\n");
 
@@ -129,6 +130,21 @@ void StationaryMain::loop(){
                     uint8_t use_rising_edge = (uint8_t)token.substring(1).toInt();
                     config->use_rising_edge = use_rising_edge > 0;
                     client->print("Use rising edge set to " + String(config->use_rising_edge) + "\n");
+                    
+                } else if (token.startsWith("I")) { // change identificiation type
+                    uint8_t integrate_freq_domain = (uint8_t)token.substring(1).toInt();
+                    config->integrate_freq_domain = integrate_freq_domain > 0;
+                    client->print("Integrate freq domain set to " + String(config->integrate_freq_domain) + "\n");
+                } else if (token.startsWith("T")) { // change period
+                    uint32_t period_ms = (uint32_t)token.substring(1).toInt();
+                    config->period = period_ms * 1000;
+                    config->response_timeout_duration = 2 * config->period;
+                    client->print("Changed period to " + String(period_ms) + "ms\n");
+                                    
+                } else if (token.startsWith("d")) { // change duration to find peak
+                    config->duration_to_find_peak = (uint16_t)token.substring(1).toInt();
+                    client->print("Changed duration to find peak to " + String(config->duration_to_find_peak) + "us\n");
+
                 }
             }
         }

@@ -15,7 +15,7 @@ TcpClient client = TcpClient(use_both_servers, USE_ETHERNET);
 config_t config = {
     500, // fourier_window_size
     25000,  // dft_threshold
-    2,  // my_frequency_idx
+    1,  // my_frequency_idx
     1000,  // duration_to_find_peak
     1000,  // micros_send_duration
     400000,  // response_timeout_duration
@@ -28,7 +28,7 @@ config_t config = {
 
 Listener listener = Listener(&config);
 StationaryMain stationary_main = StationaryMain(&config, &listener);
-// RovMain rov_main = RovMain(&config, &listener);
+RovMain rov_main = RovMain(&config, &listener);
 void setup() {
     Serial.begin(9600);
 
@@ -43,16 +43,16 @@ void setup() {
 
     Serial.println("Connect from setup");
     //client.poll_reconnect_if_needed();
-    stationary_main.setup(&client);
-    // rov_main.setup(&client);
+    // stationary_main.setup(&client);
+    rov_main.setup(&client);
 } 
 
 void loop() {
   // test_fourier_speed_main();
     //client.poll_reconnect_if_needed();
     //client.poll_send_msgs(); // only for ADC
-    // rov_main.loop();
-    stationary_main.loop();
+    rov_main.loop();
+    // stationary_main.loop();
     // sender_main_loop();
   // test_dac_driver_loop();
   // connection_ok = test_adc_stream_loop(connection_ok);
