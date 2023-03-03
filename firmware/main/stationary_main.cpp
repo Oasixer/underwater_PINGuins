@@ -16,82 +16,31 @@
 #include <IntervalTimer.h>
 
 
-// for receiving
-/* IntervalTimer adc_timer; // for ADC read ISR @ intervals */
-
-/* // state variables */
-/* bool is_currently_receiving = true;    // if true receiving data. else sending */
-/* bool is_peak_finding = false;    // to indicate peak finding state */
-/* bool listen_for_call_and_respond = true;    // set by user commands */
-
-/* uint64_t ts_start_listening = 0; */
-/* uint64_t ts_start_talking = 0; */
-/* uint64_t ts_peak = 0; */
-/* uint64_t ts_peak_finding_timeout = 0; */
-
-/* uint8_t idx_freq_detected = 0; */
-
-/* float curr_max_magnitude = 0; */
-
-// extern float frequency_magnitudes[N_FREQUENCIES];
-
-/* // variables used for checking health */
-/* extern uint64_t fourier_counter; */
-/* extern uint16_t last_reading; */
-/* uint64_t t_last_printed = 0; */
-
-/* // configurations */
-/* extern config_t config; */
 StationaryMain::StationaryMain(){
-
+    listener = Listener();
+    frequency_magnitudes = get_frequency_magnitudes();
+    last_reading = get_last_reading();
 }
 
 void StationaryMain::setup(TcpClient* client, config_t* config){
+    this->config = config;
+    this->client = client;
+
     pinMode(NO_LEAK_PIN, INPUT);
     dac_setup(DAC_PIN, DAC_CLR_PIN, HV_ENABLE_PIN);
     
     setup_relay();
-    this->config = config;
-    this->client = client;
-    client->print("Setup relay\n");
     switch_relay_to_receive();
+    client->print("Setup relay\n");
 
     adc_timer.begin(adc_timer_callback, ADC_PERIOD);
-
-    last_reading = adc_setup();
+    adc_setup();
     client->print("Setup adc and timer\n");
-    fourier_initialize(config->fourier_window_size);
 
+    fourier_initialize(config->fourier_window_size);
     client->print("Setup fourier\n");
 
-    // frequency_magnitudes = get_frequency_magnitudes();
-
-    // client = TcpClient();
-    // client->setup();
-    // client->print("Starting\n");
 }
-
-// void StationaryMain::detect_frequencies() {
-//     for (uint8_t i = 0; i < N_FREQUENCIES; ++i) {
-//         if (frequency_magnitudes[i] > config->dft_threshold) {
-//             // initialize peak finding variables and switch to peak finding state
-//             curr_max_magnitude = frequency_magnitudes[i];
-//             ts_peak = micros();
-//             ts_peak_finding_timeout = micros() + config->micros_to_find_peak;
-//             idx_freq_detected = i;
-//             is_peak_finding = true;
-
-//             client->print("After " + uint64ToString(micros() - ts_start_listening) + 
-//                 "us of listening, detected freq " + String(FREQUENCIES[i]) + 
-//                 "Hz, with magnitude " + String(curr_max_magnitude, 0) + ", with magnitudes: [" + 
-//                 String(frequency_magnitudes[0], 0) + ", " + String(frequency_magnitudes[1], 0) + ", " + 
-//                 String(frequency_magnitudes[2], 0) + ", " + String(frequency_magnitudes[3], 0) + ", " + 
-//                 String(frequency_magnitudes[4], 0) + ", " + String(frequency_magnitudes[5], 0) + "]\n");
-
-//             return;    // this should only be true for one frequency. there's no point in checking the rest
-//         }
-//     }
-// }
 
 // void StationaryMain::peak_finding(){
 //     if (config->use_rising_edge || micros() >= ts_peak_finding_timeout){    // finished peak finding
@@ -124,25 +73,26 @@ void StationaryMain::setup(TcpClient* client, config_t* config){
 //     }
 // }
 
-void StationaryMain::send_data(){
+
+void StationaryMain::send_mode_hb(){
+    if (micros() >= ts_start_talking){
+        reply_yell();
+    }
+}
+
+void StationaryMain::reply_yell(){
     if (micros() - ts_start_talking < config->micros_send_duration){ // keep sending
-        dac_set_analog_float(sinf(2 * M_PI * config->my_frequency    / 1000000 * (float)(micros() % (1000000 / config->my_frequency))));
+        dac_set_analog_float(sinf(2 * M_PI * config->my_frequency / 1000000 * (float)(micros() % (1000000 / config->my_frequency))));
     } else { // finished beep
-        ts_start_listening = micros() + INACTIVE_DURATION_AFTER_BEEP;
+        // ts_start_listening = micros() + INACTIVE_DURATION_AFTER_BEEP;
+        listener.begin(micros() + INACTIVE_DURATION_AFTER_BEEP);
         is_currently_receiving = true; // switch to receiving
 
         // client->print("sent for " + uint64ToString(micros() - ts_start_talking) + 
         //     "us. Finished sending at " + uint64ToString(micros()) + 
         //     ". Will start listening at " + uint64ToString(ts_start_talking) + "\n");
-
         switch_relay_to_receive();
         adc_timer.begin(adc_timer_callback, ADC_PERIOD);
-    }
-}
-
-void StationaryMain::send_mode_hb(){
-    if (micros() >= ts_start_talking){
-        send_data();
     }
 }
 
@@ -214,20 +164,31 @@ void StationaryMain::loop(){
         if (listen_for_call_and_respond){
             if (is_currently_receiving){
                 // receive_mode_hb();
+                listener_output_t listener_data = listener->hb();
+                if (listener_data.finished){
+                    if (listener_data.idx_identified_freq == config->idx_my_frequency){
+                        is_currently_receiving = false;
+                        ts_start_talking = listener_data.ts_peak + config->period;
+                        adc_timer.end();
+                        switch_relay_to_send();
+                    }
+                    else{
+                        listener->begin(listener_data.ts_peak + config->period - MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD);
+                    }
             } else {    // sending
                 send_mode_hb();
             }
         }
         
-        // if (micros() - t_last_printed > 1000000){
-        //     int fourier_counter_lmao = 69;
-        //     client->print(uint64ToString(fourier_counter_lmao) + " Hz, Last Value: " + 
-        //         String(*last_reading) + ", magnitudes: [" + 
-        //         String(frequency_magnitudes[0], 0) + ", " + String(frequency_magnitudes[1], 0) + ", " + 
-        //         String(frequency_magnitudes[2], 0) + ", " + String(frequency_magnitudes[3], 0) + ", " + 
-        //         String(frequency_magnitudes[4], 0) + ", " + String(frequency_magnitudes[5], 0) + "]\n");
-        //     t_last_printed = micros();
-        //     // fourier_counter = 0;
-        // }
+        if (micros() - t_last_printed > 1000000){
+            int fourier_counter_lmao = 69;
+            client->print(uint64ToString(fourier_counter_lmao) + " Hz, Last Value: " + 
+                String(*last_reading) + ", magnitudes: [" + 
+                String(frequency_magnitudes[0], 0) + ", " + String(frequency_magnitudes[1], 0) + ", " + 
+                String(frequency_magnitudes[2], 0) + ", " + String(frequency_magnitudes[3], 0) + ", " + 
+                String(frequency_magnitudes[4], 0) + ", " + String(frequency_magnitudes[5], 0) + "]\n");
+            t_last_printed = micros();
+            // fourier_counter = 0;
+        }
     }
 }

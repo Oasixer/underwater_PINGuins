@@ -20,6 +20,8 @@ class RovMain {
         uint64_t ts_peak = 0;
         uint64_t ts_peak_finding_timeout = 0;
 
+        uint16_t n_round_robins_done = 0;
+
         uint64_t ts_stop_continuous_transmission = 0;
         uint64_t ts_response_timeout = 0;
 
@@ -41,7 +43,10 @@ class RovMain {
         uint16_t n_talks_done = 0;
         uint16_t n_talks_command = 0;
         
+        uint16_t* last_reading;
         TcpClient* client;
+
+        uint64_t trip_times[MAX_N_TRIPS][3] = {{0}};
     public:
         RovMain();
         void setup(TcpClient* client, config_t* config);
@@ -50,5 +55,6 @@ class RovMain {
         void rov_send_mode_hb();
         void reset_send_receive();
         void rov_peak_finding();
+        void receive_mode_hb();
 };
 #endif

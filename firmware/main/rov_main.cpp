@@ -16,6 +16,16 @@
 #define MAX_N_TRIPS 500
 
 RovMain::RovMain(){
+    listener = Listener();
+    frequency_magnitudes = get_frequency_magnitudes();
+    last_reading = get_last_reading();
+
+    for (uint16_t i = 0; i < MAX_N_TRIPS; ++i){
+        for (uint8_t j = 0; j<3; ++j){
+            trip_times[i][j] = 0;
+        }
+    }
+    n_round_robins_done = 0;
 }
 
 void RovMain::setup(TcpClient* client, config_t* config){
@@ -28,10 +38,13 @@ void RovMain::setup(TcpClient* client, config_t* config){
     
     setup_relay();
     switch_relay_to_send();
-    adc_setup();
-    fourier_initialize(config->fourier_window_size);
+    client->print("Setup relay\n");
 
-    client->print("Started ROV main\n");
+    adc_setup();
+    client->print("Setup adc and timer\n");
+
+    fourier_initialize(config->fourier_window_size);
+    client->print("Setup fourier\n");
 }
 
 // void RovMain::detect_frequencies() {
@@ -135,6 +148,19 @@ void RovMain::setup(TcpClient* client, config_t* config){
 //     }
 // }
 
+void RovMain::reset_send_receive(){
+    adc_timer.end();
+
+    for(uint8_t i = 0; i<3; i++){
+        trip_times[n_round_robins_done][i] = 0;
+    }
+
+    curr_expected_freq_idx = 1;
+    n_round_robins_done++;
+    is_currently_receiving = false;
+    switch_relay_to_send();
+}
+
 void RovMain::rov_send_mode_hb(){
     if (micros() >= ts_start_talking){ // send data
         if (micros() - ts_start_talking < config->micros_send_duration){ // keep sending
@@ -193,6 +219,7 @@ void RovMain::rov_main_loop(){
                 // Extract the field value based on the token prefix
                 if (token.startsWith("h")){    // just a ping
                     client->print("hi\n");
+                    
 
                 } else if (token.startsWith("s")){ // stop everything and go to default state;
                     is_transmit_continuously = false;
@@ -294,9 +321,47 @@ void RovMain::rov_main_loop(){
 
         } else if (find_my_position){
             // TODO: check if no longer need to find my position
-            
-        }
 
-        } // else do nothing
+            if (is_currently_receiving){
+                listener_output_t listener_data = listener->hb();
+                receive_mode_hb();
+            }
+            else {  // sending
+                send_mode_hb();
+            }
+        }
+    }
+}
+
+void RovMain::receive_mode_hb(listener_output_t &listener_data){
+    if (listener_data.finished){
+        if (listener_data.idx_identified_freq == curr_expected_freq_idx){
+            adc_timer.end();
+
+            uint64_t trip_micros = listener_data.ts_peak - ts_start_talking;
+            trip_times[n_round_robins_done][curr_expected_freq_idx-1] = trip_micros;
+
+            // float distance = micros_to_meters(trip_micros);
+            ts_start_talking = listener_data.ts_peak + config->period;
+
+            if (++curr_expected_freq_idx >= 4) { // n_nodes
+                curr_expected_freq_idx = 1;
+                // print all distances
+                n_round_robins_done++;
+            }
+
+            switch_relay_to_send();
+            is_currently_receiving = false;
+        }
+        else{
+            client->print("ERROR: Unexpected frequency: " + String(listener_data.idx_identified_freq) +"| expected freq #"+String(curr_expected_freq_idx)+"\n");
+            reset_send_receive();
+        }
+    }
+    else{
+        if (millis() >= ts_response_timeout){
+            client->print("ERROR: timeout while expecting freq #"+String(curr_expected_freq_idx)+"\n");
+            reset_send_receive();
+        }
     }
 }

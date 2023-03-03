@@ -4,6 +4,7 @@
 #include "tcp_client.h"
 #include "constants.h"
 #include "configurations.h"
+#include "listener.h"
 
 // void stationary_main_setup(TcpClient& client);
 // void stationary_main_loop(TcpClient& client);
@@ -27,7 +28,7 @@ class StationaryMain {
         float curr_max_magnitude = 0;
 
         IntervalTimer adc_timer; // for ADC read ISR @ intervals
-        // float* frequency_magnitudes;
+        float* frequency_magnitudes;
 
         // variables used for checking health
         // uint64_t *fourier_counter;
@@ -37,6 +38,8 @@ class StationaryMain {
         TcpClient* client;
         // configurations
         config_t* config;
+
+        Listener listener;
         // void detect_frequencies();
         void peak_finding();
         void receive_mode_hb();

@@ -35,8 +35,11 @@ void adc_isr() {
 float* get_frequency_magnitudes(){
     return frequency_magnitudes;
 }
+uint16_t* get_last_reading(){
+    return &last_reading;
+}
 
-uint16_t* adc_setup(){
+void adc_setup(){
     ///// ADC0 ////
     adc->adc0->setAveraging(0);    // set number of averages
     adc->adc0->setResolution(12); // set bits of resolution
@@ -46,7 +49,6 @@ uint16_t* adc_setup(){
         ADC_SAMPLING_SPEED::HIGH_SPEED); // change the sampling speed
 
     adc->adc0->enableInterrupts(adc_isr);
-    return &last_reading;
 }
 
 void adc_timer_callback(void) {
