@@ -4,6 +4,7 @@
         {
             "name": "Arduino",
             "compilerPath": "C:\\Users\\kijiji\\AppData\\Local\\Arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\bin\\arm-none-eabi-g++",
+                            
             "compilerArgs": [
                 "-Wall",
                 "-ffunction-sections",
@@ -18,6 +19,7 @@
                 "C:\\Users\\kijiji\\AppData\\Local\\Arduino15\\packages\\teensy\\hardware\\avr\\1.57.2\\cores\\teensy4",
                 "C:\\Users\\kijiji\\AppData\\Local\\Arduino15\\packages\\teensy\\hardware\\avr\\1.57.2\\libraries\\SPI",
                 "C:\\Users\\kijiji\\AppData\\Local\\Arduino15\\packages\\teensy\\hardware\\avr\\1.57.2\\libraries\\ADC",
+                "C:\\Users\\kijiji\\AppData\\Local\\Arduino15\\packages\\teensy\\hardware\\avr\\1.57.2\\libraries\\Wire",
                 "c:\\users\\kijiji\\appdata\\local\\arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\arm-none-eabi\\include\\c++\\5.4.1",
                 "c:\\users\\kijiji\\appdata\\local\\arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\arm-none-eabi\\include\\c++\\5.4.1\\arm-none-eabi",
                 "c:\\users\\kijiji\\appdata\\local\\arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\arm-none-eabi\\include\\c++\\5.4.1\\backward",
@@ -390,7 +392,8 @@
                 "__ATOMIC_ACQ_REL=4",
                 "__ATOMIC_RELEASE=3",
                 "USBCON"
-            ]
+            ],
+            "configurationProvider": "ms-vscode.makefile-tools"
         }
     ]
 }

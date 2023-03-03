@@ -9,10 +9,14 @@ default-run = "maurice"
 
 [dependencies]
 chrono = "0.4.23"
+rocket = "0.5.0-rc.2"
+rocket_contrib = "0.4.11"
 rodio = "0.17.0"
 rustyline = "11.0.0"
+serde = "1.0.152"
 strum = "0.24.1"
 strum_macros = "0.24.3"
+tokio = "1.26.0"
 
 [[bin]]
 name = "maurice"

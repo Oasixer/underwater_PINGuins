@@ -1,16 +1,16 @@
 // #include "sender_main.h"
 // #include "test_dac_driver.h"
 // #include "test_adc_stream.h"
+#include "configurations.h"
 #include "stationary_main.h"
-#include "listener.h"
-//#include "tcp_client.h"
-// #include "fourier.h"
 #include "rov_main.h"
+#include "listener.h"
+#include "tcp_client.h"
+// #include "fourier.h"
 
 #define USE_ETHERNET false
 #define use_both_servers true // ahmad you should change this
 TcpClient client = TcpClient(use_both_servers, USE_ETHERNET);
-
 
 config_t config = {
     500, // fourier_window_size
@@ -27,33 +27,51 @@ config_t config = {
 };
 
 Listener listener = Listener(&config);
-StationaryMain stationary_main = StationaryMain(&config, &listener);
-// RovMain rov_main = RovMain(&config, &listener);
+StationaryMain stationary_main = StationaryMain(&config, &listener, &client);
+RovMain rov_main = RovMain(&config, &listener, &client);
+
+bool USE_ROV = true;
+
 void setup() {
     Serial.begin(9600);
 
-
-    // test_dac_driver_setup();
-    // test_adc_stream_setup();
-    // sender_main_setup();
-    // fourier_initialize(500);
-
-
     client.setup();
+    if (USE_ETHERNET){
+      client.poll_reconnect_if_needed();
+    }
 
     Serial.println("Connect from setup");
-    //client.poll_reconnect_if_needed();
-    stationary_main.setup(&client);
-    // rov_main.setup(&client);
+    if (USE_ROV){
+        rov_main.setup();
+    } else {
+        stationary_main.setup();
+    }
 } 
 
 void loop() {
   // test_fourier_speed_main();
-    //client.poll_reconnect_if_needed();
+    if (USE_ETHERNET){
+      client.poll_reconnect_if_needed();
+    }
     //client.poll_send_msgs(); // only for ADC
-    // rov_main.loop();
-    stationary_main.loop();
-    // sender_main_loop();
-  // test_dac_driver_loop();
-  // connection_ok = test_adc_stream_loop(connection_ok);
+
+    bool change_rov_state = false;
+    if (USE_ROV){
+        change_rov_state = rov_main.loop();
+    } else {
+        change_rov_state = stationary_main.loop();
+    }
+
+    if (change_rov_state){
+        if (USE_ROV){
+            rov_main.shutdown();
+            stationary_main.setup();
+            USE_ROV = false;
+        }
+        else{ // PREVIOUS STATE WAS STATIONARY
+            stationary_main.shutdown();
+            rov_main.setup();
+            USE_ROV = true;
+        }
+    }
 }

@@ -47,9 +47,11 @@ class StationaryMain {
         void send_mode_hb();
         void reply_yell();
     public:
-        StationaryMain(config_t* config, Listener* listener);
-        void setup(TcpClient* client);
-        void loop();
+        StationaryMain(config_t* config, Listener* listener, TcpClient* client);
+        void setup();
+
+        void shutdown();
+        bool loop();
 };
 
 // #endif // FYDP_STATIONARY_MAIN_H

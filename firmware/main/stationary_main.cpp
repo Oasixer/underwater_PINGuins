@@ -17,15 +17,15 @@
 #include <IntervalTimer.h>
 
 
-StationaryMain::StationaryMain(config_t* config, Listener* listener){
+StationaryMain::StationaryMain(config_t* config, Listener* listener, TcpClient* client){
     frequency_magnitudes = get_frequency_magnitudes();
     last_reading = get_last_reading();
     this->config = config;
     this->listener= listener;
+    this->client = client;
 }
 
-void StationaryMain::setup(TcpClient* client){
-    this->client = client;
+void StationaryMain::setup(){
 
     pinMode(NO_LEAK_PIN, INPUT);
     dac_setup(DAC_PIN, DAC_CLR_PIN, HV_ENABLE_PIN);
@@ -41,6 +41,10 @@ void StationaryMain::setup(TcpClient* client){
     fourier_initialize(config->fourier_window_size);
     client->print("Setup fourier\n");
 
+}
+
+void StationaryMain::shutdown(){
+    adc_timer.end();
 }
 
 // void StationaryMain::peak_finding(){
@@ -99,7 +103,7 @@ void StationaryMain::reply_yell(){
     }
 }
 
-void StationaryMain::loop(){
+bool StationaryMain::loop(){
     if(digitalRead(NO_LEAK_PIN) == THERE_IS_A_LEAK){
         digitalWrite(HV_ENABLE_PIN, LOW);    // turn off high voltage
         switch_relay_to_receive();    // switch to receive mode
@@ -129,6 +133,9 @@ void StationaryMain::loop(){
                 // Extract the field value based on the token prefix
                 if (token.startsWith("h")){    // just a ping
                     client->print("hi\n");
+                } else if (token == "BECOME_ROV") { // change marco polo time delay
+                    client->print("Becoming ROV\n");
+                    return true;
                 } else if (token.startsWith("s")){// stop trying to detect frequencies;
                     listen_for_call_and_respond = false;
                     switch_relay_to_receive();
@@ -195,4 +202,5 @@ void StationaryMain::loop(){
             // fourier_counter = 0;
         }
     }
+    return false; // stay as stationary n
 }

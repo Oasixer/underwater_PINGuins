@@ -18,11 +18,12 @@
 // buffer to store trip times
 #define MAX_N_TRIPS 500
 
-RovMain::RovMain(config_t* config, Listener* listener){
+RovMain::RovMain(config_t* config, Listener* listener, TcpClient* client){
     frequency_magnitudes = get_frequency_magnitudes();
     last_reading = get_last_reading();
     this->config = config;
     this->listener = listener;
+    this->client = client;
 
     for (uint8_t i = 0; i<3; ++i){
         trip_times_round_robin[i] = 0;
@@ -30,9 +31,7 @@ RovMain::RovMain(config_t* config, Listener* listener){
     n_round_robins_done = 0;
 }
 
-void RovMain::setup(TcpClient* client){
-    this->client = client;
-
+void RovMain::setup(){
     pinMode(NO_LEAK_PIN, INPUT);
     dac_setup(DAC_PIN, DAC_CLR_PIN, HV_ENABLE_PIN);
     
@@ -50,6 +49,10 @@ void RovMain::setup(TcpClient* client){
     client->print("Initialized pressure sensor\n");
 
     delay(50);
+}
+
+void RovMain::shutdown(){
+    adc_timer.end();
 }
 
 void RovMain::reset_send_receive(){
@@ -88,13 +91,13 @@ coord_3d_t get_coord_from_string(String str){
     int idx_delimiter_1 = str.indexOf(',');
     int idx_delimiter_2 = str.indexOf(',', idx_delimiter_1 + 1);
     return coord_3d_t{
-        atof(str.substring(0, idx_delimiter_1).c_str()),
-        atof(str.substring(idx_delimiter_1 + 1, idx_delimiter_2).c_str()),
-        atof(str.substring(idx_delimiter_2 + 1, str.length()).c_str()),
+        float(atof(str.substring(0, idx_delimiter_1).c_str())),
+        float(atof(str.substring(idx_delimiter_1 + 1, idx_delimiter_2).c_str())),
+        float(atof(str.substring(idx_delimiter_2 + 1, str.length()).c_str())),
     };
 }
 
-void RovMain::loop(){
+bool RovMain::loop(){
     if(digitalRead(NO_LEAK_PIN) == THERE_IS_A_LEAK){
         digitalWrite(HV_ENABLE_PIN, LOW);    // turn off high voltage
         switch_relay_to_receive();    // switch to receive mode
@@ -141,6 +144,13 @@ void RovMain::loop(){
                     switch_relay_to_send();
                     client->print("Stopped\n");
 
+                } else if (token.startsWith("b")) { // change marco polo time delay
+                    config -> marco_polo_time_delay = atof(token.substring(1).c_str());
+                    client->print("Changed marco polo time delay to " + String(config->speed_of_sound) + "us\n");
+                }
+                else if(token == "B_STATIONARY"){
+                    client->print("Becoming stationary");
+                    return true;
                 } else if (token.startsWith("g")) { // talk for x times
                     n_talks_command = (uint16_t)token.substring(1).toInt();
                     ts_start_talking = micros();    // start talking now
@@ -250,6 +260,7 @@ void RovMain::loop(){
             }
         }
     }
+    return false; // only return true if becoming stationary
 }
 
 void RovMain::receive_mode_hb_single_freq(listener_output_t &listener_data){

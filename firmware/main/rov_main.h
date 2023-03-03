@@ -48,9 +48,10 @@ class RovMain {
         void send_mode_hb();
         float trip_time_to_dist(uint64_t trip_time);
     public:
-        RovMain(config_t* config, Listener* listener);
-        void setup(TcpClient* client);
-        void loop();
+        RovMain(config_t* config, Listener* listener, TcpClient* client);
+        void setup();
+        void shutdown();
+        bool loop();
         void detect_frequencies();
         void reset_send_receive();
         void rov_peak_finding();

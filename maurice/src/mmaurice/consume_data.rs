@@ -7,10 +7,13 @@ use super::{
     Maurice,
     ClientSocketWrapper,
     AdcMsgToWrite,
+    // DisplayData,
+    Coord3D,
     MSG_SIZE_BYTES,
     msound_player::{ SoundEffect, },
 };
 use crate::utils::create_parent_directories;
+
 
 impl Maurice {
     pub(super) fn poll_for_finished_recording(&mut self){
@@ -89,12 +92,26 @@ impl Maurice {
                         // println!("got a string message from {}", mac[5]);
                         let last_non_zero_byte = msg.bytes.iter().rposition(|&b| b != 0).unwrap();
                         // writeln!(client_socket_wrapper.stream_file.as_mut().unwrap(), "{}", String::from_utf8(msg.bytes[1..last_non_zero_byte+1].to_vec()).unwrap()).expect("failed to write to file");
-                        client_socket_wrapper.fprint(&format!("{}",String::from_utf8(msg.bytes[1..last_non_zero_byte+1].to_vec()).unwrap()));
+                        let msg_str = String::from_utf8(msg.bytes[1..last_non_zero_byte+1].to_vec()).unwrap();
+                        client_socket_wrapper.fprint(&format!("{}", &msg_str));
+
+                        if msg_str.starts_with("Distances:"){
+                            match parse_estimate(&msg_str) {
+                                Ok(position) => {
+                                    // Do something with the parsed position...
+                                    println!("Parsed position: ({}, {}, {})", position.x, position.y, position.z);
+                                },
+                                Err(err) => {
+                                    eprintln!("Error parsing estimate: {}", err);
+                                },
+                            }
+                        }
                     }
                     else if msg.bytes[0] == 0b11111111 { // flag for leak message
                         // find last non-zero byte in msg
                         client_socket_wrapper.fprint("LEAK DETECTED!!!!\n");
-                        self.sound_player.play_sound_effect(SoundEffect::Leak);
+                        self.sound_player.play_sound_effect(SoundEffect::Leak2);
+                        // self.sound_player.play_sound_effect(SoundEffect::Leak);
                     }
                 } // client_socket_wrapper found
             } // match client_socket_wrapper
@@ -102,3 +119,21 @@ impl Maurice {
         // sleep(self.config.max_msg_poll_interval_ms);
     }
 } 
+
+fn parse_estimate(info: &str) -> Result<Coord3D, String> {
+    if let Some(start_idx) = info.find("Estimate: [") {
+        let end_idx = info[start_idx..].find(']').map(|idx| start_idx + idx)
+            .ok_or_else(|| "Failed to find end of Estimate field".to_string())?;
+        let coords = info[start_idx + 12..end_idx].split(", ").collect::<Vec<&str>>();
+        if coords.len() == 3 {
+            let x = coords[0].parse().map_err(|e| format!("Failed to parse x value: {}", e))?;
+            let y = coords[1].parse().map_err(|e| format!("Failed to parse y value: {}", e))?;
+            let z = coords[2].parse().map_err(|e| format!("Failed to parse z value: {}", e))?;
+            Ok(Coord3D { x, y, z })
+        } else {
+            Err("Invalid number of coordinates in Estimate field".to_string())
+        }
+    } else {
+        Err("Failed to find Estimate field".to_string())
+    }
+}

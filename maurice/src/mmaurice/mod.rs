@@ -5,6 +5,11 @@ use std::io::{BufWriter};
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::io::Write;
 use std::fs::File;
+use tokio::task;
+
+// use rocket::serde::Serialize;
+use serde::Serialize;
+use std::time::Instant;
 
 
 mod server;
@@ -12,7 +17,9 @@ mod msound_player;
 mod stdin_listener;
 mod file_writer;
 mod consume_data;
+mod web_server;
 
+use web_server::rocket;
 use msound_player::SoundPlayer;
 use msound_player::SoundEffect;
 use crate::config::Config;
@@ -59,7 +66,29 @@ pub struct Maurice{
     rx_connection_change: Receiver<ConnectionChange>,
     rx_stdin_listener: Receiver<String>,
     tx_adc_file_writer: Sender<AdcMsgToWrite>,
+    // tx_display_data: Sender<DisplayData>,
     // rx_file_writer: Receiver<MsgToWrite>,
+}
+
+// pub struct Message<'r> {
+//    contents: &'r str,
+// }
+
+// #[derive(Serialize)]
+// pub struct DisplayData<'r>{
+//     coords: &'r Coord3D,
+//     updated: &'r std::time::Instant,
+// }
+// #[derive(Serialize)]
+// pub struct DisplayData{
+    // coords: Coord3D,
+    // updated: std::time::Instant,
+// }
+#[derive(Debug, PartialEq, Serialize)]
+struct Coord3D {
+    x: f32,
+    y: f32,
+    z: f32,
 }
 
 #[derive(Clone)]
@@ -93,6 +122,7 @@ impl AdcRecMetadata{
     }
 }
 
+
 // impl AdcRecMetadata{
 //     pub fn write_stream() 
 // }
@@ -110,6 +140,9 @@ impl Maurice {
     }
 
     pub fn run(&mut self) {
+        // let rocket_handle = task::spawn(async move {
+        //         rocket().launch().await;
+        //     });
         loop {
             self.accept_new_connections_nonblocking();
             self.poll_for_messages_passed_from_socket_polling_threads();
@@ -118,10 +151,13 @@ impl Maurice {
             self.poll_for_finished_recording();
             // self.client_publisher();
         }
+        // rocket_handle.await.unwrap();
+
     }
 
     pub fn new(config: Config) -> Self {
         let sound_player = SoundPlayer::new();
+
         let client_sockets: Vec<ClientSocketWrapper> = vec![];
         // let config = Arc::new(config);
         let config = config.clone();
@@ -129,6 +165,8 @@ impl Maurice {
         server
             .set_nonblocking(true)
             .expect("failed to initialize non-blocking");
+
+        println!("Waiting for connections...");
 
 
         let (tx_msg_from_client_listener_to_consumer, 
@@ -140,6 +178,8 @@ impl Maurice {
         let rx_stdin_listener = stdin_listener::start_stdin_listener_thread2();
 
         let tx_file_writer = file_writer::start_writer_thread();
+
+        // let tx_display_data = web_server::start_web_server_thread();
 
         Maurice {
             sound_player,
@@ -154,6 +194,7 @@ impl Maurice {
             rx_connection_change,
             rx_stdin_listener,
             tx_adc_file_writer: tx_file_writer,
+            // tx_display_data
             // client_socket_adc_rec_metadatas
         }
     }

@@ -1,20 +1,14 @@
 use std::io::stdin;
 use std::sync::mpsc::{channel, Receiver};
 use std::thread;
-// use std::time::Duration;
-// use std::time::Instant;
-// use std::io::BufWriter;
-// use std::fs::File
 use std::io::Write;
 use std::time::{Duration, Instant};
-use std::sync::Arc;
 
 use super::{
     Command, Maurice, AdcRecMetadata, SoundEffect, ClientSocketWrapper};
 use crate::{do_nothing, config::Config, utils::hex_string_to_u8};
 use crate::config::{DATA_STREAM_DIR, ADC_DATA_DIR};
-use crate::utils::create_directories;
-// use rustyline::error::ReadlineError;
+use crate::utils::{create_directories, thread_sleep};
 use rustyline::error::ReadlineError;
 use rustyline;
 // use rustyline::{DefaultEditor, Result};
@@ -71,6 +65,7 @@ pub fn start_stdin_listener_thread2() -> Receiver<String> {
             if buffer.len() > 0 {
                 tx.send(buffer).unwrap();
             }
+            thread_sleep(200);
         }
     });
     rx
@@ -87,13 +82,13 @@ impl Maurice{
     }
 
     fn report_cmd_fail(&self, info: &str){
-        self.sound_player.play_sound_effect(SoundEffect::Error);
+        self.sound_player.play_sound_effect(SoundEffect::Error2);
         self.report_cmd(info);
     }
     
     pub(super) fn print_commands_info(){
         println!("Commands:");
-        println!("v <up || down>                       (increase or decrease volume)");
+        println!("v <up || down>                            (increase or decrease volume)");
         println!("<xx> w <filename> <record_n_seconds>      (record to filename for n seconds)");
         println!("<xx> n <prefix>                           (select file prefix for subsequent recordings)");
         println!("<xx> w <record_n_seconds>                 (record to prefix_N for n seconds, N++ each time)");
@@ -101,6 +96,23 @@ impl Maurice{
 
     fn handle_command_for_client(&mut self, target_mac_byte: &str, tokens: Vec<&str>) -> (Option<Command>, bool){
         // println!("Handle command for client");
+        if (target_mac_byte == "xx"){ // TODO handle this nicer, this is duplicate code from the
+            // normal command sending section below.
+            let cmd_str: String = tokens.join(" ");
+            let mut cmd_bytes: [u8; super::OUTGOING_CMD_SIZE_BYTES] = [0; super::OUTGOING_CMD_SIZE_BYTES];
+            for (i,byte) in cmd_str.bytes().enumerate(){
+                cmd_bytes[i] = byte;
+            }
+
+            // if not a w command, then its a string command that we will allow the teensy to handle.
+            let command = Command{
+                target_mac: [0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+                bytes: cmd_bytes,
+            };
+            self.report_cmd(&format!("Sending command: <{}> to ALL",cmd_str));
+            return (Some(command), true);
+        }
+
         let target_last_byte = hex_string_to_u8(target_mac_byte);
         if target_last_byte.is_err(){
             self.report_cmd_fail(&format!("invalid hex string: {}",target_mac_byte));
@@ -211,7 +223,7 @@ impl Maurice{
                                     target_mac: mac,
                                     bytes: cmd_bytes,
                                 };
-                                self.report_cmd(&format!("sending command: <{}> to {}",cmd_str, mac_str));
+                                self.report_cmd(&format!("Sending command: <{}> to {}",cmd_str, mac_str));
                                 return (Some(command), false);
                             }
                         }
@@ -262,7 +274,7 @@ impl Maurice{
                 return None;
             }
         }
-        if (tokens[0].len() == 2) {
+        if tokens[0].len() == 2{
             let tokens_1_onwards_vec = tokens[1..].to_vec();
             let (result_cmd, play_sound) = self.handle_command_for_client(&tokens[0], tokens_1_onwards_vec);
             if play_sound{
@@ -279,7 +291,7 @@ impl Maurice{
             }
         }
         else{
-            self.sound_player.play_sound_effect(SoundEffect::Error);
+            // self.sound_player.play_sound_effect(SoundEffect::Error);
             self.report_cmd_fail(&format!("invalid command: {}", input));
             return None;
         }
@@ -308,11 +320,18 @@ impl Maurice{
                 let command = self.handle_command(input);
                 if command.is_some(){
                     let command = command.unwrap();
+                    let command_str = String::from_utf8(command.bytes.to_vec()).unwrap();
                     let target_mac = command.target_mac;
+                    if target_mac == [0,0,0,0,0,0]{ // send to all
+                        for client in self.client_sockets.iter_mut(){
+                            client.fprint(&format!("Sending command: {}\n", command_str));
+                            client.stream.write_all(&command.bytes).expect("unable to send command");
+                        }
+                        return;
+                    }
                     let client: &mut ClientSocketWrapper = self.get_client_socket(target_mac).expect("unable to get client socket");
                     // read utf8 string from command.bytes:
-                    let command_str = String::from_utf8(command.bytes.to_vec()).unwrap();
-                    client.fprint(&format!("Received command: {}\n", command_str));
+                    client.fprint(&format!("Sending command: {}\n", command_str));
                     client.stream.write_all(&command.bytes).expect("unable to send command");
                     // client.tx_cmd_from_stdin_listener_to_client.send(command).unwrap();
                 }

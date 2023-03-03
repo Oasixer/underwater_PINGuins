@@ -5,6 +5,8 @@
         "vector": "cpp",
         "xutility": "cpp",
         "iosfwd": "cpp",
-        "xlocale": "cpp"
+        "xlocale": "cpp",
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true
     }
 }
