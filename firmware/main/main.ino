@@ -15,7 +15,7 @@ TcpClient client = TcpClient(use_both_servers, USE_ETHERNET);
 config_t config = {
     500, // fourier_window_size
     25000,  // dft_threshold
-    2,  // my_frequency_idx
+    1,  // my_frequency_idx
     1000,  // duration_to_find_peak
     1000,  // micros_send_duration
     400000,  // response_timeout_duration
@@ -29,6 +29,10 @@ config_t config = {
 Listener listener = Listener(&config);
 StationaryMain stationary_main = StationaryMain(&config, &listener, &client);
 RovMain rov_main = RovMain(&config, &listener, &client);
+// StationaryMain stationary_main = StationaryMain(&config, &listener);
+// RovMain rov_main = RovMain(&config, &listener);
+// void setup() {
+//     Serial.begin(9600);
 
 bool USE_ROV = true;
 

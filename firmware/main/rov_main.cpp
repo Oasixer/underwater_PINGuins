@@ -280,12 +280,13 @@ void RovMain::receive_mode_hb_single_freq(listener_output_t &listener_data){
         adc_timer.end();
         uint64_t trip_time = ts_peak - ts_start_talking;
         trip_times_single_freq[n_talks_done] = trip_time;
-        float dist_estimate = trip_time_to_dist(trip_times_round_robin[0]);
+        float dist_estimate = trip_time_to_dist(trip_time);
         client->print("Trip time: " + uint64ToString(trip_time) + "us. Measured Distance: " + 
                      String(dist_estimate, 3) + "m\n");
 
         ts_start_talking = micros() + config->period;
         ts_response_timeout = ts_start_talking + config->response_timeout_duration;
+        // client->print("Ts_start talking: " + uint64ToString(ts_start_talking) + "\n");
 
         is_currently_receiving = false;
         switch_relay_to_send();
@@ -323,6 +324,7 @@ void RovMain::receive_mode_hb_single_freq(listener_output_t &listener_data){
 
 void RovMain::round_robin_receive_mode_hb(listener_output_t &listener_data){
     if (listener_data.finished){
+        client->print("Found freq: " + String(curr_freq_idx) + "\n");
         if (listener_data.idx_identified_freq == curr_freq_idx){
             adc_timer.end();
 
@@ -361,7 +363,7 @@ void RovMain::round_robin_receive_mode_hb(listener_output_t &listener_data){
         }
     }
     else{
-        if (millis() >= ts_response_timeout){
+        if (micros() >= ts_response_timeout){
             client->print("ERROR: timeout while expecting freq #"+String(curr_freq_idx)+"\n");
             reset_send_receive();
         }

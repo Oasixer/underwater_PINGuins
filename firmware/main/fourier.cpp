@@ -10,7 +10,7 @@ uint16_t fourier_window_size = MAX_SZ_WINDOW;
 // list to represent the factor to shift the fourier domain every update
 complex_t shift_factor[N_FREQUENCIES];
 
-complex_t temp_shift_factor[N_FREQUENCIES] = {
+complex_t shift_factor_for_N500[N_FREQUENCIES] = {
 {0.990461425696651187600139110145, 0.137790290684638078166912578126},  // freq = 11000Hz, N = 500
 {0.97452687278657712521834355357, 0.224270760949381170457073153557},  // freq = 18000Hz, N = 500
 {0.951056516295153531181938433292, 0.309016994374947395751718204338},  // freq = 25000Hz, N = 500
@@ -18,39 +18,6 @@ complex_t temp_shift_factor[N_FREQUENCIES] = {
 {0.863923417192835274569517878263, 0.503623201635760797678642575192},  // freq = 42000Hz, N = 500
 {0.809016994374947451262869435595, 0.587785252292473137103456792829},  // freq = 50000Hz, N = 500
 
-};
-
-complex_t shift_factor_for_N500[N_FREQUENCIES] = {
-    {0.992114701314477875904174197785, 0.125333233564304258322863461217},  // freq = 10000Hz, N = 500
-    {0.97452687278657712521834355357, 0.224270760949381170457073153557},  // freq = 18000Hz, N = 500
-    {0.947098304994744344398327484669, 0.320943609807209484507950492116},  // freq = 26000Hz, N = 500
-    {0.910105970684995657649096756359, 0.414375580993284142738986020049},  // freq = 34000Hz, N = 500
-    {0.863923417192835274569517878263, 0.503623201635760797678642575192},  // freq = 42000Hz, N = 500
-    {0.823532597628427454061750268011, 0.567268949126756516498915061675},  // freq = 48000Hz, N = 500
-};
-complex_t shift_factor_for_N250[N_FREQUENCIES] = {
-    {0.992114701314477875904174197785, 0.125333233564304258322863461217},  // freq = 10000Hz, N = 250
-    {0.97452687278657712521834355357, 0.224270760949381170457073153557},  // freq = 18000Hz, N = 250
-    {0.947098304994744344398327484669, 0.320943609807209484507950492116},  // freq = 26000Hz, N = 250
-    {0.910105970684995657649096756359, 0.414375580993284142738986020049},  // freq = 34000Hz, N = 250
-    {0.863923417192835274569517878263, 0.503623201635760797678642575192},  // freq = 42000Hz, N = 250
-    {0.823532597628427454061750268011, 0.567268949126756516498915061675},  // freq = 48000Hz, N = 250
-};
-complex_t shift_factor_for_N1000[N_FREQUENCIES] = {
-    {0.992114701314477875904174197785, 0.125333233564304258322863461217},  // freq = 10000Hz, N = 1000
-    {0.97452687278657712521834355357, 0.224270760949381170457073153557},  // freq = 18000Hz, N = 1000
-    {0.947098304994744344398327484669, 0.320943609807209484507950492116},  // freq = 26000Hz, N = 1000
-    {0.910105970684995657649096756359, 0.414375580993284142738986020049},  // freq = 34000Hz, N = 1000
-    {0.863923417192835274569517878263, 0.503623201635760797678642575192},  // freq = 42000Hz, N = 1000
-    {0.823532597628427454061750268011, 0.567268949126756516498915061675},  // freq = 48000Hz, N = 1000
-};
-complex_t shift_factor_for_N1250[N_FREQUENCIES] = {
-    {0.992114701314477875904174197785, 0.125333233564304258322863461217},  // freq = 10000Hz, N = 1250
-    {0.97452687278657712521834355357, 0.224270760949381170457073153557},  // freq = 18000Hz, N = 1250
-    {0.947098304994744344398327484669, 0.320943609807209484507950492116},  // freq = 26000Hz, N = 1250
-    {0.910105970684995657649096756359, 0.414375580993284142738986020049},  // freq = 34000Hz, N = 1250
-    {0.863923417192835274569517878263, 0.503623201635760797678642575192},  // freq = 42000Hz, N = 1250
-    {0.823532597628427454061750268011, 0.567268949126756516498915061675},  // freq = 48000Hz, N = 1250
 };
 
 
@@ -78,40 +45,25 @@ void fourier_initialize(uint16_t N){
     }
     index_curr_in_ring_buffer = 0;
 
-    // // initialize the shift factor
-    // if (fourier_window_size == 250){
-    //     for (uint8_t i = 0; i < N_FREQUENCIES; ++i){
-    //         shift_factor[i].real = shift_factor_for_N250[i].real;
-    //         shift_factor[i].imaginary = shift_factor_for_N250[i].imaginary;
-    //     }
-    // } else if (fourier_window_size == 500){
-    //     for (uint8_t i = 0; i < N_FREQUENCIES; ++i){
-    //         shift_factor[i].real = shift_factor_for_N500[i].real;
-    //         shift_factor[i].imaginary = shift_factor_for_N500[i].imaginary;
-    //     }
-    // } else if (fourier_window_size == 1000){
-    //     for (uint8_t i = 0; i < N_FREQUENCIES; ++i){
-    //         shift_factor[i].real = shift_factor_for_N1000[i].real;
-    //         shift_factor[i].imaginary = shift_factor_for_N1000[i].imaginary;
-    //     }
-    // } else if (fourier_window_size == 1250){
-    //     for (uint8_t i = 0; i < N_FREQUENCIES; ++i){
-    //         shift_factor[i].real = shift_factor_for_N1250[i].real;
-    //         shift_factor[i].imaginary = shift_factor_for_N1250[i].imaginary;
-    //     }
-    // } else {
-    //     Serial.printf("WARNING: The shift factors for this window size (%i) is not hardcoded. Calculating based on frequencies\n", fourier_window_size);
-    //     uint16_t F_NATURAL = F_SAMPLE / fourier_window_size;
-    //     for (uint8_t i = 0; i < N_FREQUENCIES; ++i){
-    //         uint16_t k = FREQUENCIES[i] / F_NATURAL;
-    //         float theta = 2. * M_PI * k / fourier_window_size;
-    //         shift_factor[i].real = cosf(theta);
-    //         shift_factor[i].imaginary = sinf(theta);
-    //     }
-    // }
+    // initialize the shift factor
+    if (fourier_window_size == 500){
+        for (uint8_t i = 0; i < N_FREQUENCIES; ++i){
+            shift_factor[i].real = shift_factor_for_N500[i].real;
+            shift_factor[i].imaginary = shift_factor_for_N500[i].imaginary;
+        }
+    } else {
+        Serial.printf("WARNING: The shift factors for this window size (%i) is not hardcoded. Calculating based on frequencies\n", fourier_window_size);
+        uint16_t F_NATURAL = F_SAMPLE / fourier_window_size;
+        for (uint8_t i = 0; i < N_FREQUENCIES; ++i){
+            uint16_t k = FREQUENCIES[i] / F_NATURAL;
+            float theta = 2. * M_PI * k / fourier_window_size;
+            shift_factor[i].real = cosf(theta);
+            shift_factor[i].imaginary = sinf(theta);
+        }
+    }
     for (uint8_t i = 0; i < N_FREQUENCIES; ++i){
-        shift_factor[i].real = temp_shift_factor[i].real;
-        shift_factor[i].imaginary = temp_shift_factor[i].imaginary;
+        shift_factor[i].real = shift_factor_for_N500[i].real;
+        shift_factor[i].imaginary = shift_factor_for_N500[i].imaginary;
     }
 
     // initialize the frequency domains to zeros

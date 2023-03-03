@@ -1,8 +1,10 @@
 #include "listener.h"
+#include "adc_isr.h"
 #include <Arduino.h>
 
 Listener::Listener(config_t *config){
     this->config = config;
+    frequency_magnitudes = get_frequency_magnitudes();
 }
 
 void Listener::begin(uint64_t ts_begin){

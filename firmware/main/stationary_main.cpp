@@ -20,6 +20,7 @@
 StationaryMain::StationaryMain(config_t* config, Listener* listener, TcpClient* client){
     frequency_magnitudes = get_frequency_magnitudes();
     last_reading = get_last_reading();
+    fourier_counter = get_fourier_counter();
     this->config = config;
     this->listener= listener;
     this->client = client;
@@ -41,43 +42,12 @@ void StationaryMain::setup(){
     fourier_initialize(config->fourier_window_size);
     client->print("Setup fourier\n");
 
+    listener->begin(micros() + config->period);
 }
 
 void StationaryMain::shutdown(){
     adc_timer.end();
 }
-
-// void StationaryMain::peak_finding(){
-//     if (config->use_rising_edge || micros() >= ts_peak_finding_timeout){    // finished peak finding
-//         is_currently_receiving = false; // switch to sending state
-//         ts_start_talking = ts_peak + INACTIVE_DURATION_BEFORE_TALKING;
-
-//         // client->print("Finished peak finding at " + uint64ToString(micros()) + 
-//         //     ". Peak is" + uint64ToString(ts_peak) + " with magnitude " + 
-//         //     String(curr_max_magnitude, 0) + "\n");
-
-//         curr_max_magnitude = 0;    // reset to zero for next time
-//         is_peak_finding = false;    // start next time not in peak finding state
-        
-//         switch_relay_to_send();
-//     } else {
-//         if (frequency_magnitudes[idx_freq_detected] > curr_max_magnitude){
-//             curr_max_magnitude = frequency_magnitudes[idx_freq_detected];
-//             ts_peak = micros();
-//         }
-//     }
-// }
-
-// void receive_mode_hb(){
-//     if (micros() >= ts_start_listening){    // if not in inactive period
-//         if (is_peak_finding) {
-//             peak_finding();
-//         } else {
-//             detect_frequencies();
-//         }
-//     }
-// }
-
 
 void StationaryMain::send_mode_hb(){
     if (micros() >= ts_start_talking){
@@ -118,7 +88,6 @@ bool StationaryMain::loop(){
             message = Serial.readStringUntil(message_terminator);
         }
         if (message.length() > 0){
-            // Read the incoming message from the serial port
 
             // Split the message into tokens using the delimiter
             int pos = 0;
@@ -136,7 +105,7 @@ bool StationaryMain::loop(){
                 } else if (token == "BECOME_ROV") { // change marco polo time delay
                     client->print("Becoming ROV\n");
                     return true;
-                } else if (token.startsWith("s")){// stop trying to detect frequencies;
+                } else if (token.startsWith("x")){// stop trying to detect frequencies;
                     listen_for_call_and_respond = false;
                     switch_relay_to_receive();
                     adc_timer.begin(adc_timer_callback, ADC_PERIOD);
@@ -147,6 +116,7 @@ bool StationaryMain::loop(){
                     adc_timer.begin(adc_timer_callback, ADC_PERIOD);
                     is_peak_finding = false;
                     is_currently_receiving = true;
+                    listener->begin(micros());
                     client->print("Started\n");
 
                 } else if (token.startsWith("f")) {    // change my frequency
@@ -155,7 +125,6 @@ bool StationaryMain::loop(){
 
                 } else if (token.startsWith("N")) {    // change window size
                     config->fourier_window_size = (uint16_t)token.substring(1).toInt();
-                    config->duration_to_find_peak = ADC_PERIOD * config->fourier_window_size;
                     config->micros_send_duration = ADC_PERIOD * config->fourier_window_size;
                     client->print("Changed window size to " + String(config->fourier_window_size) + "\n");
 
@@ -167,13 +136,27 @@ bool StationaryMain::loop(){
                     uint8_t use_rising_edge = (uint8_t)token.substring(1).toInt();
                     config->use_rising_edge = use_rising_edge > 0;
                     client->print("Use rising edge set to " + String(config->use_rising_edge) + "\n");
+                    
+                } else if (token.startsWith("I")) { // change identificiation type
+                    uint8_t integrate_freq_domain = (uint8_t)token.substring(1).toInt();
+                    config->integrate_freq_domain = integrate_freq_domain > 0;
+                    client->print("Integrate freq domain set to " + String(config->integrate_freq_domain) + "\n");
+                } else if (token.startsWith("T")) { // change period
+                    uint32_t period_ms = (uint32_t)token.substring(1).toInt();
+                    config->period = period_ms * 1000;
+                    config->response_timeout_duration = 2 * config->period;
+                    client->print("Changed period to " + String(period_ms) + "ms\n");
+                                    
+                } else if (token.startsWith("d")) { // change duration to find peak
+                    config->duration_to_find_peak = (uint16_t)token.substring(1).toInt();
+                    client->print("Changed duration to find peak to " + String(config->duration_to_find_peak) + "us\n");
+
                 }
             }
         }
 
         if (listen_for_call_and_respond){
             if (is_currently_receiving){
-                // receive_mode_hb();
                 listener_output_t listener_data = listener->hb();
                 if (listener_data.finished){
                     if (listener_data.idx_identified_freq == config->my_frequency_idx){
@@ -192,14 +175,13 @@ bool StationaryMain::loop(){
         }
         
         if (micros() - t_last_printed > 1000000){
-            int fourier_counter_lmao = 69;
-            client->print(uint64ToString(fourier_counter_lmao) + " Hz, Last Value: " + 
+            client->print(uint64ToString(*fourier_counter) + " Hz, Last Value: " + 
                 String(*last_reading) + ", magnitudes: [" + 
                 String(frequency_magnitudes[0], 0) + ", " + String(frequency_magnitudes[1], 0) + ", " + 
                 String(frequency_magnitudes[2], 0) + ", " + String(frequency_magnitudes[3], 0) + ", " + 
                 String(frequency_magnitudes[4], 0) + ", " + String(frequency_magnitudes[5], 0) + "]\n");
             t_last_printed = micros();
-            // fourier_counter = 0;
+            *fourier_counter = 0;
         }
     }
     return false; // stay as stationary n
