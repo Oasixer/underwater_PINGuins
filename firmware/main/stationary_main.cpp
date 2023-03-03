@@ -20,6 +20,7 @@
 StationaryMain::StationaryMain(config_t* config, Listener* listener){
     frequency_magnitudes = get_frequency_magnitudes();
     last_reading = get_last_reading();
+    fourier_counter = get_fourier_counter();
     this->config = config;
     this->listener= listener;
 }
@@ -41,39 +42,8 @@ void StationaryMain::setup(TcpClient* client){
     fourier_initialize(config->fourier_window_size);
     client->print("Setup fourier\n");
 
+    listener->begin(micros() + config->period);
 }
-
-// void StationaryMain::peak_finding(){
-//     if (config->use_rising_edge || micros() >= ts_peak_finding_timeout){    // finished peak finding
-//         is_currently_receiving = false; // switch to sending state
-//         ts_start_talking = ts_peak + INACTIVE_DURATION_BEFORE_TALKING;
-
-//         // client->print("Finished peak finding at " + uint64ToString(micros()) + 
-//         //     ". Peak is" + uint64ToString(ts_peak) + " with magnitude " + 
-//         //     String(curr_max_magnitude, 0) + "\n");
-
-//         curr_max_magnitude = 0;    // reset to zero for next time
-//         is_peak_finding = false;    // start next time not in peak finding state
-        
-//         switch_relay_to_send();
-//     } else {
-//         if (frequency_magnitudes[idx_freq_detected] > curr_max_magnitude){
-//             curr_max_magnitude = frequency_magnitudes[idx_freq_detected];
-//             ts_peak = micros();
-//         }
-//     }
-// }
-
-// void receive_mode_hb(){
-//     if (micros() >= ts_start_listening){    // if not in inactive period
-//         if (is_peak_finding) {
-//             peak_finding();
-//         } else {
-//             detect_frequencies();
-//         }
-//     }
-// }
-
 
 void StationaryMain::send_mode_hb(){
     if (micros() >= ts_start_talking){
@@ -114,7 +84,6 @@ void StationaryMain::loop(){
             message = Serial.readStringUntil(message_terminator);
         }
         if (message.length() > 0){
-            // Read the incoming message from the serial port
 
             // Split the message into tokens using the delimiter
             int pos = 0;
@@ -166,7 +135,6 @@ void StationaryMain::loop(){
 
         if (listen_for_call_and_respond){
             if (is_currently_receiving){
-                // receive_mode_hb();
                 listener_output_t listener_data = listener->hb();
                 if (listener_data.finished){
                     if (listener_data.idx_identified_freq == config->my_frequency_idx){
@@ -185,14 +153,13 @@ void StationaryMain::loop(){
         }
         
         if (micros() - t_last_printed > 1000000){
-            int fourier_counter_lmao = 69;
-            client->print(uint64ToString(fourier_counter_lmao) + " Hz, Last Value: " + 
+            client->print(uint64ToString(*fourier_counter) + " Hz, Last Value: " + 
                 String(*last_reading) + ", magnitudes: [" + 
                 String(frequency_magnitudes[0], 0) + ", " + String(frequency_magnitudes[1], 0) + ", " + 
                 String(frequency_magnitudes[2], 0) + ", " + String(frequency_magnitudes[3], 0) + ", " + 
                 String(frequency_magnitudes[4], 0) + ", " + String(frequency_magnitudes[5], 0) + "]\n");
             t_last_printed = micros();
-            // fourier_counter = 0;
+            *fourier_counter = 0;
         }
     }
 }

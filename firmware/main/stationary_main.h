@@ -31,8 +31,8 @@ class StationaryMain {
         float* frequency_magnitudes;
 
         // variables used for checking health
-        // uint64_t *fourier_counter;
         uint16_t *last_reading;
+        uint64_t *fourier_counter;
         uint64_t t_last_printed = 0;
 
         TcpClient* client;

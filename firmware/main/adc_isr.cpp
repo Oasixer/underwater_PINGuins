@@ -7,13 +7,12 @@
 #include <stdint.h>
 
 // variables used for checking health
-// uint64_t fourier_counter = 0;
+uint64_t fourier_counter = 0;
 uint16_t last_reading = 0;
 
 ADC *adc = new ADC();
-// float frequency_magnitudes[N_FREQUENCIES] = {0};
+float frequency_magnitudes[N_FREQUENCIES] = {0};
 
-float *frequency_magnitudes;
 // when the measurement finishes, this will be called
 void adc_isr() {
     const uint16_t reading = adc->adc0->readSingle();
@@ -39,6 +38,9 @@ float* get_frequency_magnitudes(){
 uint16_t* get_last_reading(){
     return &last_reading;
 }
+uint64_t* get_fourier_counter(){
+    return &fourier_counter;
+}
 
 void adc_setup(){
     ///// ADC0 ////
@@ -54,5 +56,5 @@ void adc_setup(){
 
 void adc_timer_callback(void) {
     adc->adc0->startSingleRead(PIEZO_IN_PIN);
-    // fourier_counter++;
+    fourier_counter++;
 }
