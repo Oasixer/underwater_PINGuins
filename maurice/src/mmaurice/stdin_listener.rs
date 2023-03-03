@@ -17,18 +17,18 @@ use rustyline;
 // use 
 // use std::time::Duration;
 
-pub fn start_stdin_listener_thread() -> Receiver<String> {
-    let (tx, rx) = channel::<String>();
-    thread::spawn(move || loop {
+// pub fn start_stdin_listener_thread() -> Receiver<String> {
+//     let (tx, rx) = channel::<String>();
+//     thread::spawn(move || loop {
         
-        let mut buffer = String::new();
-        stdin().read_line(&mut buffer).unwrap();
-        if buffer.len() > 0 {
-            tx.send(buffer).unwrap();
-        }
-    });
-    rx
-}
+//         let mut buffer = String::new();
+//         stdin().read_line(&mut buffer).unwrap();
+//         if buffer.len() > 0 {
+//             tx.send(buffer).unwrap();
+//         }
+//     });
+//     rx
+// }
 
 pub fn start_stdin_listener_thread2() -> Receiver<String> {
     let (tx, rx) = channel::<String>();
