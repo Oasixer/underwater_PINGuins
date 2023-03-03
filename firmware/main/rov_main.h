@@ -5,6 +5,7 @@
 #include "listener.h"
 #include "constants.h"
 #include "configurations.h"
+#include "utils.h"
 
 class RovMain {
     private:
@@ -13,44 +14,39 @@ class RovMain {
 
         // state variables
         bool is_currently_receiving = false;  // if true receiving data. else sending
-        bool is_peak_finding = false;  // to indicate peak finding state
         bool is_transmit_continuously = false;  // set by user commands
 
-        uint64_t ts_start_listening = 0;
         uint64_t ts_start_talking = 0;
-        uint64_t ts_peak = 0;
-        uint64_t ts_peak_finding_timeout = 0;
-
-        uint16_t n_round_robins_done = 0;
-
         uint64_t ts_stop_continuous_transmission = 0;
         uint64_t ts_response_timeout = 0;
 
-        uint8_t idx_freq_detected = 0;
-        uint8_t curr_expected_freq_idx = 0;
+        uint16_t n_round_robins_done = 0;
+        uint16_t n_round_robins_command = 0;
+        uint16_t n_talks_done = 0;
+        uint16_t n_talks_command = 0;
+        uint16_t frequency_to_send = 18000;
 
-        float curr_max_magnitude = 0;
+        uint8_t curr_freq_idx = 1;
+
+        coord_3d_t node_coords_3d[N_ALL_NODES] = {{0}};
 
         float *frequency_magnitudes;
-        // float **frequency_magnitudes[N_FREQUENCIES];
-        // float *frequency_magnitudes;
+        float og_depth = 0.0;
+        float curr_depth = 0.0;
 
-        // configurations
-        // extern config_t config;
         config_t* config;
 
         Listener* listener;
-        // float measured_distances[MAX_N_TRIPS] = {0};
-
-        uint16_t n_talks_done = 0;
-        uint16_t n_talks_command = 0;
         
         uint16_t* last_reading;
         TcpClient* client;
 
-        uint64_t trip_times[MAX_N_TRIPS][3] = {{0}};
-        void receive_mode_hb(listener_output_t&);
+        uint64_t trip_times_round_robin[3] = {{0}};
+        uint64_t trip_times_single_freq[MAX_N_TRIPS] = {{0}};
+        void round_robin_receive_mode_hb(listener_output_t&);
+        void receive_mode_hb_single_freq(listener_output_t &listener_data);
         void send_mode_hb();
+        float trip_time_to_dist(uint64_t trip_time);
     public:
         RovMain(config_t* config, Listener* listener);
         void setup(TcpClient* client);

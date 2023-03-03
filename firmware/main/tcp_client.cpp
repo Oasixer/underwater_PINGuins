@@ -1,39 +1,45 @@
 #include "tcp_client.h"
 #include "src/NativeEthernet/src/NativeEthernet.h"
 
-TcpClient::TcpClient(bool use_both_servers){
+TcpClient::TcpClient(bool use_both_servers, bool use_ethernet){
     this->use_both_servers = use_both_servers;
+    this->use_ethernet = use_ethernet;
     server_ip_try = &server_ip_k;
 }
 
 void TcpClient::setup(){
-    teensyMAC(mac);
+    if (use_ethernet){
+        teensyMAC(mac);
 
-    Ethernet.setStackHeap(1024 * 128);
-    Ethernet.setSocketSize(1576 * 8);
+        Ethernet.setStackHeap(1024 * 128);
+        Ethernet.setSocketSize(1576 * 8);
 
-    // start the Ethernet connection:
-    Serial.println("Initialize Ethernet with DHCP. [If this is the last output, teensy's ethernet prob unplugged]");
-    if (Ethernet.begin(mac) == 0) {
-        while (true) {
-            Serial.println("Failed to configure Ethernet using DHCP");
-            delay(100); // do nothing, no point running without Ethernet hardware
+        // start the Ethernet connection:
+        Serial.println("Initialize Ethernet with DHCP. [If this is the last output, teensy's ethernet prob unplugged]");
+        if (Ethernet.begin(mac) == 0) {
+            while (true) {
+                Serial.println("Failed to configure Ethernet using DHCP");
+                delay(100); // do nothing, no point running without Ethernet hardware
+            }
+        } else {
+            Serial.print("    DHCP assigned IP ");
+            Serial.println(Ethernet.localIP());
         }
-    } else {
-        Serial.print("    DHCP assigned IP ");
-        Serial.println(Ethernet.localIP());
-    }
 
-    for (auto i=0; i<BUF_LEN; i++){
-        adc_buf[i] = 0;
-    }
+        for (auto i=0; i<BUF_LEN; i++){
+            adc_buf[i] = 0;
+        }
 
-    for (auto i=0; i<BYTES_PER_MSG; i++){
-        string_msg[i] = 0;
+        for (auto i=0; i<BYTES_PER_MSG; i++){
+            string_msg[i] = 0;
+        }
     }
 }
 
 bool TcpClient::has_cmd_available(){
+    if (!use_ethernet){
+        return false;
+    }
     int avail = client.available();
     if (avail > 0){
         Serial.println("found message");
@@ -211,26 +217,27 @@ void TcpClient::send_leak_detected_panic_message(){
 }
 
 void TcpClient::print(String message){
-    string_msg[0] = 0b10010000;
     Serial.print(message);
-    for (auto i=1; i<BYTES_PER_MSG; i++){
-        if (i < message.length()+1){
-            string_msg[i] = message.charAt(i-1);
+    if (use_ethernet){
+        string_msg[0] = 0b10010000;
+        for (auto i=1; i<BYTES_PER_MSG; i++){
+            if (i < message.length()+1){
+                string_msg[i] = message.charAt(i-1);
+            }
+            else if (i < last_str_len + 1){
+                string_msg[i] = 0x00;
+            }
+            else{
+                break;
+            }
         }
-        else if (i < last_str_len + 1){
-            string_msg[i] = 0x00;
-        }
-        else{
-            break;
+        last_str_len = message.length();
+        // Serial.println(string_msg[0]);
+        const uint16_t n = client.write(string_msg, BYTES_PER_MSG);
+        // delay(500);
+        if (!check_bytes(n)){
         }
     }
-    last_str_len = message.length();
-    // Serial.println(string_msg[0]);
-    const uint16_t n = client.write(string_msg, BYTES_PER_MSG);
-    // delay(500);
-    if (!check_bytes(n)){
-    }
-
 }
 
 bool TcpClient::check_bytes(uint16_t n){

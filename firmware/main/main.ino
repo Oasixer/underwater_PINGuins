@@ -4,12 +4,12 @@
 #include "stationary_main.h"
 #include "listener.h"
 //#include "tcp_client.h"
-// #include "rov_main.h"
 // #include "fourier.h"
 #include "rov_main.h"
 
+#define USE_ETHERNET false
 #define use_both_servers true // ahmad you should change this
-TcpClient client = TcpClient(use_both_servers);
+TcpClient client = TcpClient(use_both_servers, USE_ETHERNET);
 
 
 config_t config = {
@@ -28,6 +28,7 @@ config_t config = {
 
 Listener listener = Listener(&config);
 StationaryMain stationary_main = StationaryMain(&config, &listener);
+// RovMain rov_main = RovMain(&config, &listener);
 void setup() {
     Serial.begin(9600);
 
@@ -43,19 +44,16 @@ void setup() {
     Serial.println("Connect from setup");
     //client.poll_reconnect_if_needed();
     stationary_main.setup(&client);
-    // stationary_main_setup(client);
-    //rov_main_setup(client);
+    // rov_main.setup(&client);
 } 
 
 void loop() {
   // test_fourier_speed_main();
     //client.poll_reconnect_if_needed();
     //client.poll_send_msgs(); // only for ADC
-    //rov_main_loop(client);
+    // rov_main.loop();
     stationary_main.loop();
     // sender_main_loop();
   // test_dac_driver_loop();
   // connection_ok = test_adc_stream_loop(connection_ok);
-  Serial.println("hi");
-  delay(100);
 }

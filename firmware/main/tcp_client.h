@@ -22,6 +22,7 @@
 
 class TcpClient {
     private:
+        bool use_ethernet;
         bool use_both_servers;
         IPAddress server_ip_k = IPAddress(192, 168, 1, 70);
         IPAddress server_ip_a = IPAddress(192, 168, 1, 123); //IP address target
@@ -45,7 +46,7 @@ class TcpClient {
         void teensyMAC(uint8_t *mac);
 
     public:
-        TcpClient(bool use_both_servers);
+        TcpClient(bool use_both_servers, bool use_ethernet);
         void setup();
         void poll_reconnect_if_needed();
         bool has_cmd_available();

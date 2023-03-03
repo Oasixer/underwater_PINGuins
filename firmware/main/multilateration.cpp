@@ -9,7 +9,12 @@ void get_points_of_intersection(coord_2d_t *intersections, float dists[2], coord
         angle = 0;
     }
 
-    float x_local = (powf(dists[0], 2) - powf(dists[1], 2) + powf(diff, 2)) / (2 * diff);
+    float x_local;
+    if (diff >= EPSILON) {
+        x_local = (powf(dists[0], 2) - powf(dists[1], 2) + powf(diff, 2)) / (2 * diff);
+    } else {
+        x_local = 0.0;
+    }
     float y1_local;
     if (dists[0] > fabsf(x_local)){
         y1_local = sqrtf(powf(dists[0], 2) - powf(x_local, 2));
