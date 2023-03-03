@@ -15,13 +15,13 @@ class Listener{
     private:
         float frequency_magnitudes[N_FREQUENCIES];
         config_t *config;
-        uint64_t ts_peak_finding_timeout = -1;
         uint64_t ts_start_listening = 0;
+        uint64_t ts_peak_finding_timeout = -1;
         uint64_t ts_peak = 0;
         uint8_t idx_identified_freq = 0;
-        float sum_of_freq_magnitdues_during_peak_finding[N_FREQUENCIES] = {0};
         float curr_max_magnitude = 0;
-        bool is_peak_finding = false;
+        bool detected = false;
+        float sum_of_freq_magnitdues_during_peak_finding[N_FREQUENCIES] = {0};
 };
 
 typedef struct {

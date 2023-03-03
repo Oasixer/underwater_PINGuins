@@ -1,8 +1,21 @@
 #include "listener.h"
 #include <Arduino.h>
 
+Listener::Listener(config_t *config){
+    this->config = config;
+}
+
 void Listener::begin(uint64_t ts_begin){
-    
+    this->ts_start_listening = ts_begin;
+    ts_peak_finding_timeout = -1;
+    ts_peak = 0;
+    idx_identified_freq = 0;
+    curr_max_magnitude = 0.0;
+    detected = false;
+    for (uint8_t i = 0; i < N_FREQUENCIES; ++i){
+        sum_of_freq_magnitdues_during_peak_finding[i] = 0.0;
+    }
+
 }
 
 listener_output_t Listener::hb(){
@@ -47,4 +60,5 @@ listener_output_t Listener::hb(){
             }
         }
     }
+    return {false, 0, 0};
 }
