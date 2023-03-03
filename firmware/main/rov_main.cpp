@@ -5,6 +5,7 @@
 #include "fourier.h"
 #include "printing.h"
 #include "tcp_client.h"
+#include "utils.h"
 
 #include <Arduino.h>
 #include <stdint.h>
@@ -15,10 +16,11 @@
 // buffer to store trip times
 #define MAX_N_TRIPS 500
 
-RovMain::RovMain(){
-    listener = Listener();
+RovMain::RovMain(config_t* config, Listener* listener){
     frequency_magnitudes = get_frequency_magnitudes();
     last_reading = get_last_reading();
+    this->config = config;
+    this->listener = listener;
 
     for (uint16_t i = 0; i < MAX_N_TRIPS; ++i){
         for (uint8_t j = 0; j<3; ++j){
@@ -28,10 +30,10 @@ RovMain::RovMain(){
     n_round_robins_done = 0;
 }
 
-void RovMain::setup(TcpClient* client, config_t* config){
+void RovMain::setup(TcpClient* client){
     this->client = client;
-    this->config = config;
-    config->my_frequency = 25000;
+    // config->my_frequency = 25000;
+    config->my_frequency_idx = F_LOW;
 
     pinMode(NO_LEAK_PIN, INPUT);
     dac_setup(DAC_PIN, DAC_CLR_PIN, HV_ENABLE_PIN);
@@ -161,13 +163,14 @@ void RovMain::reset_send_receive(){
     switch_relay_to_send();
 }
 
-void RovMain::rov_send_mode_hb(){
+void RovMain::send_mode_hb(){
     if (micros() >= ts_start_talking){ // send data
         if (micros() - ts_start_talking < config->micros_send_duration){ // keep sending
-            dac_set_analog_float(sinf(2 * M_PI * config->my_frequency    / 1000000 * (float)(micros() % (1000000 / config->my_frequency))));
+            const uint16_t my_freq = get_freq(config->my_frequency_idx);
+            dac_set_analog_float(sinf(2 * M_PI * my_freq / 1000000 * (float)(micros() % (1000000 / my_freq))));
 
         } else { // finished beep
-            ts_start_listening = micros() + config.period - MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD;
+            ts_start_listening = micros() + config->period - MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD;
             is_currently_receiving = true; // switch to receiving
             switch_relay_to_receive();
             adc_timer.begin(adc_timer_callback, ADC_PERIOD);
@@ -179,13 +182,13 @@ coord_3d_t get_coord_from_string(String str){
     int idx_delimiter_1 = str.indexOf(',');
     int idx_delimiter_2 = str.indexOf(',', idx_delimiter_1 + 1);
     return coord_3d_t{
-        atof(token.substring(0, idx_delimiter_1)),
-        atof(token.substring(idx_delimiter_1 + 1, idx_delimiter_2)),
-        atof(token.substring(idx_delimiter_2 + 1, str.length())),
+        atof(str.substring(0, idx_delimiter_1).c_str()),
+        atof(str.substring(idx_delimiter_1 + 1, idx_delimiter_2).c_str()),
+        atof(str.substring(idx_delimiter_2 + 1, str.length()).c_str()),
     };
 }
 
-void RovMain::rov_main_loop(){
+void RovMain::loop(){
     if(digitalRead(NO_LEAK_PIN) == THERE_IS_A_LEAK){
         digitalWrite(HV_ENABLE_PIN, LOW);    // turn off high voltage
         switch_relay_to_receive();    // switch to receive mode
@@ -238,8 +241,9 @@ void RovMain::rov_main_loop(){
                     ts_response_timeout = ts_start_talking + config->response_timeout_duration;
             
                 } else if (token.startsWith("f")) {    // change my frequency
-                    config->my_frequency = (uint16_t)token.substring(1).toInt();
-                    client->print("Changed my frequency to " + String(config->my_frequency) + "\n");
+                    // config->my_frequency = (uint16_t)token.substring(1).toInt();
+                    config->my_frequency_idx = (uint16_t)token.substring(1).toInt();
+                    client->print("Changed my frequency to " + String(config->my_frequency_idx) + "\n");
 
                 } else if (token.startsWith("N")) {    // change window size
                     config->fourier_window_size = (uint16_t)token.substring(1).toInt();
@@ -263,6 +267,7 @@ void RovMain::rov_main_loop(){
                     client->print("Use rising edge set to " + String(config->use_rising_edge) + "\n");
 
                 } else if (token.startsWith("C")) { // input of node coordinates
+                    coord_3d_t coordinates[3]; // TODO @ahmad i added this so it compiles
                     int pos2 = 1;
                     for (uint8_t i = 0; i < N_ALL_NODES; ++i){
                         int next_pos2 = token.indexOf(';', pos2);
@@ -290,11 +295,11 @@ void RovMain::rov_main_loop(){
                     client->print("Changed period to " + String(period_ms) + "ms\n");
                                         
                 } else if (token.startsWith("v")) { // change speed of sound
-                    config->speed_of_sound = atof(token.substring(1));
+                    config->speed_of_sound = atof(token.substring(1).c_str());
                     client->print("Changed speed of sound to " + String(config->speed_of_sound) + "m/s\n");
 
                 } else if (token.startsWith("b")) { // change marco polo time delay
-                    config->marco_polo_time_delay = atof(token.substring(1));
+                    config->marco_polo_time_delay = atof(token.substring(1).c_str());
                     client->print("Changed marco polo time delay to " + String(config->speed_of_sound) + "us\n");
 
                 } else if (token.startsWith("d")) { // change duration to find peak
@@ -304,9 +309,12 @@ void RovMain::rov_main_loop(){
             }
         }
 
+        bool find_my_position = true; // TODO @ahmad, where we set this?
+
         if (is_transmit_continuously) {    // if the command is to transmit continuously
             if (micros() < ts_stop_continuous_transmission) { // should still transmit
-                dac_set_analog_float(sinf(2 * M_PI * config->my_frequency    / 1000000 * (float)(micros() % (1000000 / config->my_frequency))));
+                uint16_t my_freq = get_freq(config->my_frequency_idx);
+                dac_set_analog_float(sinf(2 * M_PI * my_freq / 1000000 * (float)(micros() % (1000000 / my_freq))));
             } else { // stop transmitting
                 client->print("Finished continuous transmission\n");
                 is_transmit_continuously = false;
@@ -316,7 +324,7 @@ void RovMain::rov_main_loop(){
             if (is_currently_receiving){
                 // rov_receive_mode_hb();
             } else {    // sending
-                rov_send_mode_hb();
+                send_mode_hb();
             }
 
         } else if (find_my_position){
@@ -324,7 +332,7 @@ void RovMain::rov_main_loop(){
 
             if (is_currently_receiving){
                 listener_output_t listener_data = listener->hb();
-                receive_mode_hb();
+                receive_mode_hb(listener_data);
             }
             else {  // sending
                 send_mode_hb();

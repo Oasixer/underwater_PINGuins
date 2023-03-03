@@ -2,6 +2,7 @@
 // #include "test_dac_driver.h"
 // #include "test_adc_stream.h"
 #include "stationary_main.h"
+#include "listener.h"
 //#include "tcp_client.h"
 // #include "rov_main.h"
 // #include "fourier.h"
@@ -10,12 +11,11 @@
 #define use_both_servers true // ahmad you should change this
 TcpClient client = TcpClient(use_both_servers);
 
-StationaryMain stationary_main = StationaryMain();
 
 config_t config = {
     500, // fourier_window_size
     25000,  // dft_threshold
-    18000,  // my_frequency
+    2,  // my_frequency_idx
     1000,  // duration_to_find_peak
     1000,  // micros_send_duration
     400000,  // response_timeout_duration
@@ -26,6 +26,8 @@ config_t config = {
     false, // integrate_freq_domain
 };
 
+Listener listener = Listener(&config);
+StationaryMain stationary_main = StationaryMain(&config, &listener);
 void setup() {
     Serial.begin(9600);
 
@@ -40,7 +42,7 @@ void setup() {
 
     Serial.println("Connect from setup");
     //client.poll_reconnect_if_needed();
-    stationary_main.setup(&client, &config);
+    stationary_main.setup(&client);
     // stationary_main_setup(client);
     //rov_main_setup(client);
 } 

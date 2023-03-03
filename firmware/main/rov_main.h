@@ -2,6 +2,7 @@
 #define FYDP_ROV_MAIN_H
 
 #include "tcp_client.h"
+#include "listener.h"
 #include "constants.h"
 #include "configurations.h"
 
@@ -26,10 +27,11 @@ class RovMain {
         uint64_t ts_response_timeout = 0;
 
         uint8_t idx_freq_detected = 0;
+        uint8_t curr_expected_freq_idx = 0;
 
         float curr_max_magnitude = 0;
 
-        float *frequency_magnitudes[N_FREQUENCIES];
+        float *frequency_magnitudes;
         // float **frequency_magnitudes[N_FREQUENCIES];
         // float *frequency_magnitudes;
 
@@ -37,9 +39,9 @@ class RovMain {
         // extern config_t config;
         config_t* config;
 
-        float measured_distances[MAX_N_TRIPS] = {0};
+        Listener* listener;
+        // float measured_distances[MAX_N_TRIPS] = {0};
 
-        uint64_t trip_times[MAX_N_TRIPS] = {0};
         uint16_t n_talks_done = 0;
         uint16_t n_talks_command = 0;
         
@@ -47,14 +49,14 @@ class RovMain {
         TcpClient* client;
 
         uint64_t trip_times[MAX_N_TRIPS][3] = {{0}};
+        void receive_mode_hb(listener_output_t&);
+        void send_mode_hb();
     public:
-        RovMain();
-        void setup(TcpClient* client, config_t* config);
+        RovMain(config_t* config, Listener* listener);
+        void setup(TcpClient* client);
         void loop();
         void detect_frequencies();
-        void rov_send_mode_hb();
         void reset_send_receive();
         void rov_peak_finding();
-        void receive_mode_hb();
 };
 #endif

@@ -3,7 +3,7 @@
 void get_points_of_intersection(coord_2d_t *intersections, float dists[2], coord_2d_t coords[2]){
     float diff = dist_between_points_2d(coords[0], coords[1]);
     float angle;
-    if (fabsf(coords[1].x] - coords[0].x) >= EPSILON && fabsf(coords[1].y] - coords[0].y]) >= EPSILON){
+    if (fabsf(coords[1].x - coords[0].x) >= EPSILON && fabsf(coords[1].y - coords[0].y) >= EPSILON){
         angle = atan2f(coords[1].y - coords[0].y, coords[1].x - coords[0].x);
     } else {
         angle = 0;

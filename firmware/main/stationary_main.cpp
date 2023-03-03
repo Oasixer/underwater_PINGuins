@@ -6,7 +6,8 @@
 #include "relay.h"
 #include "fourier.h"
 #include "printing.h"
-
+#include "utils.h"
+#include "listener.h"
 #include "tcp_client.h"
 #include <Arduino.h>
 #include <stdint.h>
@@ -16,14 +17,14 @@
 #include <IntervalTimer.h>
 
 
-StationaryMain::StationaryMain(){
-    listener = Listener();
+StationaryMain::StationaryMain(config_t* config, Listener* listener){
     frequency_magnitudes = get_frequency_magnitudes();
     last_reading = get_last_reading();
+    this->config = config;
+    this->listener= listener;
 }
 
-void StationaryMain::setup(TcpClient* client, config_t* config){
-    this->config = config;
+void StationaryMain::setup(TcpClient* client){
     this->client = client;
 
     pinMode(NO_LEAK_PIN, INPUT);
@@ -82,10 +83,12 @@ void StationaryMain::send_mode_hb(){
 
 void StationaryMain::reply_yell(){
     if (micros() - ts_start_talking < config->micros_send_duration){ // keep sending
-        dac_set_analog_float(sinf(2 * M_PI * config->my_frequency / 1000000 * (float)(micros() % (1000000 / config->my_frequency))));
+        uint16_t my_freq = get_freq(config->my_frequency_idx);
+        dac_set_analog_float(sinf(2 * M_PI * my_freq / 1000000 * (float)(micros() % (1000000 / my_freq))));
     } else { // finished beep
-        // ts_start_listening = micros() + INACTIVE_DURATION_AFTER_BEEP;
-        listener.begin(micros() + INACTIVE_DURATION_AFTER_BEEP);
+        ts_start_listening = micros() + config->period - MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD;
+        listener->begin(ts_start_listening);
+
         is_currently_receiving = true; // switch to receiving
 
         // client->print("sent for " + uint64ToString(micros() - ts_start_talking) + 
@@ -140,12 +143,12 @@ void StationaryMain::loop(){
                     client->print("Started\n");
 
                 } else if (token.startsWith("f")) {    // change my frequency
-                    config->my_frequency = (uint16_t)token.substring(1).toInt();
-                    client->print("Changed my frequency to " + String(config->my_frequency) + "\n");
+                    config->my_frequency_idx = (uint16_t)token.substring(1).toInt();
+                    client->print("Changed my frequency to " + String(config->my_frequency_idx) + "\n");
 
                 } else if (token.startsWith("N")) {    // change window size
                     config->fourier_window_size = (uint16_t)token.substring(1).toInt();
-                    config->micros_to_find_peak = ADC_PERIOD * config->fourier_window_size;
+                    config->duration_to_find_peak = ADC_PERIOD * config->fourier_window_size;
                     config->micros_send_duration = ADC_PERIOD * config->fourier_window_size;
                     client->print("Changed window size to " + String(config->fourier_window_size) + "\n");
 
@@ -166,7 +169,7 @@ void StationaryMain::loop(){
                 // receive_mode_hb();
                 listener_output_t listener_data = listener->hb();
                 if (listener_data.finished){
-                    if (listener_data.idx_identified_freq == config->idx_my_frequency){
+                    if (listener_data.idx_identified_freq == config->my_frequency_idx){
                         is_currently_receiving = false;
                         ts_start_talking = listener_data.ts_peak + config->period;
                         adc_timer.end();
@@ -175,6 +178,7 @@ void StationaryMain::loop(){
                     else{
                         listener->begin(listener_data.ts_peak + config->period - MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD);
                     }
+                }
             } else {    // sending
                 send_mode_hb();
             }

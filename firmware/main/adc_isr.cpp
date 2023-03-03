@@ -11,8 +11,9 @@
 uint16_t last_reading = 0;
 
 ADC *adc = new ADC();
-float frequency_magnitudes[N_FREQUENCIES] = {0};
+// float frequency_magnitudes[N_FREQUENCIES] = {0};
 
+float *frequency_magnitudes;
 // when the measurement finishes, this will be called
 void adc_isr() {
     const uint16_t reading = adc->adc0->readSingle();

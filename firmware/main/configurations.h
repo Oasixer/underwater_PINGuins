@@ -10,7 +10,7 @@ typedef struct{
     uint16_t fourier_window_size;
     uint32_t dft_threshold;
     // uint16_t my_frequency;
-    uint8_t idx_my_frequency;
+    uint8_t my_frequency_idx;
     uint16_t duration_to_find_peak;
     uint16_t micros_send_duration;
     uint32_t response_timeout_duration;

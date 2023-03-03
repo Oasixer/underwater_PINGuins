@@ -39,15 +39,16 @@ class StationaryMain {
         // configurations
         config_t* config;
 
-        Listener listener;
+        Listener* listener;
         // void detect_frequencies();
         void peak_finding();
         void receive_mode_hb();
         void send_data();
         void send_mode_hb();
+        void reply_yell();
     public:
-        StationaryMain();
-        void setup(TcpClient* client, config_t* config);
+        StationaryMain(config_t* config, Listener* listener);
+        void setup(TcpClient* client);
         void loop();
 };
 
