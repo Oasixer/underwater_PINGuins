@@ -8,7 +8,7 @@
 #include "tcp_client.h"
 // #include "fourier.h"
 
-#define USE_ETHERNET false
+#define USE_ETHERNET true
 #define use_both_servers true // ahmad you should change this
 TcpClient client = TcpClient(use_both_servers, USE_ETHERNET);
 

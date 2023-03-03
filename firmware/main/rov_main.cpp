@@ -148,7 +148,7 @@ bool RovMain::loop(){
                     config -> marco_polo_time_delay = atof(token.substring(1).c_str());
                     client->print("Changed marco polo time delay to " + String(config->speed_of_sound) + "us\n");
                 }
-                else if(token == "B_STATIONARY"){
+                else if(token == "BECOME_STATIONARY"){
                     client->print("Becoming stationary");
                     return true;
                 } else if (token.startsWith("g")) { // talk for x times

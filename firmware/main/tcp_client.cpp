@@ -92,13 +92,13 @@ String TcpClient::get_incoming_cmd(){
 
 void TcpClient::poll_reconnect_if_needed(){
     // Serial.println("Polling reconnect if needed");
-    if (!client.connected()){
+    while (!client.connected()){
         Serial.println("Client not connected, reconnecting");
         if (++consecutive_connection_failures > 5){
             #ifdef RESET_ON_FAIL_TO_RECONNECT
                 Serial.println("Failed to connect to server too many times, resetting");
                 // test_adc_stream_setup();
-                delay(1000);
+                delay(5000);
                 SCB_AIRCR = 0x05FA0004;
             #endif
         }
@@ -127,15 +127,15 @@ void TcpClient::poll_reconnect_if_needed(){
             Serial.print("Connected to ");
             Serial.println(client.remoteIP());
             connection_timestamp = millis();
+            consecutive_connection_failures = 0;    
+            return;
         } else {
             Serial.println("Server connection failed");
-            delay(200);
-            return;
+            delay(100);
+            // return;
         }
     }
-    else{
-        consecutive_connection_failures = 0;
-    }
+    consecutive_connection_failures = 0;
 }
 
 void TcpClient::send_adc_msg(){
