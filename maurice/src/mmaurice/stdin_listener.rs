@@ -82,7 +82,7 @@ impl Maurice{
     }
 
     fn report_cmd_fail(&self, info: &str){
-        self.sound_player.play_sound_effect(SoundEffect::Error2);
+        self.sound_player.play_sound_effect(SoundEffect::Error);
         self.report_cmd(info);
     }
     
