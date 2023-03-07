@@ -1,12 +1,4 @@
 {
     "files.associations": {
-        "xstring": "cpp",
-        "initializer_list": "cpp",
-        "vector": "cpp",
-        "xutility": "cpp",
-        "iosfwd": "cpp",
-        "xlocale": "cpp",
-        "editor.tabSize": 4,
-        "editor.insertSpaces": true
     }
 }
