@@ -25,7 +25,7 @@ use msound_player::SoundEffect;
 use crate::config::Config;
 use crate::config::OUTGOING_CMD_SIZE_BYTES;
 use crate::config::MSG_SIZE_BYTES;
-use crate::utils::create_parent_directories;
+use crate::utils::{create_parent_directories, thread_sleep};
 
 pub struct ConnectionChange{
     pub mac: [u8; 6],
@@ -40,6 +40,8 @@ pub struct ClientSocketWrapper{
     stream_file_name: String,
     stream_file: Option<std::fs::File>,
     adc_rec_metadata: AdcRecMetadata,
+    last_hb_received: Instant,
+    kill_me: Sender<bool>,
     // tx_cmd_from_stdin_listener_to_client: Sender<Command>,
 }
 
@@ -135,6 +137,16 @@ struct Command{
 
 impl Maurice {
     // hashmap mapping last 2 digits of mac address to full address
+    pub fn replace_client_socket(&mut self, mac: [u8; 6], new_client_socket: ClientSocketWrapper) {
+        let mut index = 0;
+        for client_socket in &self.client_sockets {
+            if client_socket.mac == mac {
+                self.client_sockets[index] = new_client_socket;
+                break;
+            }
+            index += 1;
+        }
+    }
     pub fn get_client_socket(&mut self, mac: [u8; 6]) -> Result<&mut ClientSocketWrapper, String> {
         self.client_sockets.iter_mut().find(|client_socket| client_socket.mac == mac).ok_or_else(|| format!("Could not find client socket with mac: {:?}", mac))
     }
@@ -161,7 +173,17 @@ impl Maurice {
         let client_sockets: Vec<ClientSocketWrapper> = vec![];
         // let config = Arc::new(config);
         let config = config.clone();
-        let server = TcpListener::bind(format!("{}:{}",config.my_ip.as_str(), config.server_port)).expect("Listener failed to bind");
+        let server_result = TcpListener::bind(format!("{}:{}",config.my_ip.as_str(), config.server_port));
+        let server: TcpListener = match server_result {
+            Ok(server) => server,
+            Err(e) => {
+                sound_player.play_sound_effect(msound_player::SoundEffect::Error);
+                eprintln!("Tried to bind this ip: {}, received error: {}",config.my_ip.as_str(), e);
+                println!("!!! YOU ARE ON THE WRONG NETWORK !!!");
+                thread_sleep(500);
+                std::process::exit(0);
+            }
+        };
         server
             .set_nonblocking(true)
             .expect("failed to initialize non-blocking");

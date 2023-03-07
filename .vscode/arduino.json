@@ -1,3 +1,5 @@
 {
-    "board": "teensy:avr:teensy41"
+    "board": "teensy:avr:teensy41",
+    "sketch": "firmware\\main\\main.ino",
+    "port": "COM6"
 }

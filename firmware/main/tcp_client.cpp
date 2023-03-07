@@ -16,15 +16,22 @@ void TcpClient::setup(){
 
         // start the Ethernet connection:
         Serial.println("Initialize Ethernet with DHCP. [If this is the last output, teensy's ethernet prob unplugged]");
-        if (Ethernet.begin(mac) == 0) {
-            while (true) {
-                Serial.println("Failed to configure Ethernet using DHCP");
-                delay(100); // do nothing, no point running without Ethernet hardware
+        int failedToConfigureCount = 0;
+        while (Ethernet.begin(mac) == 0) {
+            // while (true) {
+            Serial.println("Failed to configure Ethernet using DHCP");
+            delay(1000); // do nothing, no point running without Ethernet hardware
+            if (failedToConfigureCount++ > 10){
+                #ifdef RESET_ON_FAIL_TO_RECONNECT
+                Serial.println("Failed to configure Ethernet using DHCP 10 times in a row. RESETTING IN 10 SECONDS.");
+                delay(10000);
+                SCB_AIRCR = 0x05FA0004;
+                #endif
             }
-        } else {
-            Serial.print("    DHCP assigned IP ");
-            Serial.println(Ethernet.localIP());
+            // }
         }
+        Serial.print("    DHCP assigned IP ");
+        Serial.println(Ethernet.localIP());
 
         for (auto i=0; i<BUF_LEN; i++){
             adc_buf[i] = 0;
@@ -98,7 +105,7 @@ void TcpClient::poll_reconnect_if_needed(){
             #ifdef RESET_ON_FAIL_TO_RECONNECT
                 Serial.println("Failed to connect to server too many times, resetting");
                 // test_adc_stream_setup();
-                delay(5000);
+                delay(10000);
                 SCB_AIRCR = 0x05FA0004;
             #endif
         }
@@ -114,10 +121,12 @@ void TcpClient::poll_reconnect_if_needed(){
         }
 
         if (Ethernet.linkStatus() == LinkOFF) {
-            while(true){
-                Serial.println("ETHERNET FUCKY WUCKY MAYBE UNPLUGGED");
-                delay(500);
-            }
+            Serial.println("ETHERNET FUCKY WUCKY MAYBE UNPLUGGED.");
+            #ifdef RESET_ON_FAIL_TO_RECONNECT
+                Serial.println("DUE TO ETHERNET FUCKY WUCKY, REBOOTING in 10s.");
+                delay(10000);
+                SCB_AIRCR = 0x05FA0004;
+            #endif
         }
 
         Serial.print("connecting to ");
@@ -216,8 +225,19 @@ void TcpClient::send_leak_detected_panic_message(){
     Serial.println("LEAK DETECTED!!!!!!!!!!!!! SENDING PANIC MESSAGE");
 }
 
+void TcpClient::send_hb(bool rov, uint32_t hb_count){
+    String message = "HB[";
+    char str[7];
+    sprintf(str, "%06lu", hb_count);
+    String rov_str = rov ? "ROV" : "STATIONARY";
+    message += String(str)+"]"+rov_str+"\n";
+    print(message);
+}
+
 void TcpClient::print(String message){
-    Serial.print(message);
+    // if (!message.startsWith("HB")){
+        Serial.print(message);
+    // }
     if (use_ethernet){
         string_msg[0] = 0b10010000;
         for (auto i=1; i<BYTES_PER_MSG; i++){

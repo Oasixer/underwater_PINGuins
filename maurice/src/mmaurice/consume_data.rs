@@ -93,18 +93,25 @@ impl Maurice {
                         let last_non_zero_byte = msg.bytes.iter().rposition(|&b| b != 0).unwrap();
                         // writeln!(client_socket_wrapper.stream_file.as_mut().unwrap(), "{}", String::from_utf8(msg.bytes[1..last_non_zero_byte+1].to_vec()).unwrap()).expect("failed to write to file");
                         let msg_str = String::from_utf8(msg.bytes[1..last_non_zero_byte+1].to_vec()).unwrap();
-                        client_socket_wrapper.fprint(&format!("{}", &msg_str));
+                        client_socket_wrapper.fprint(&format!("<{}", &msg_str));
 
                         if msg_str.starts_with("Distances:"){
                             match parse_estimate(&msg_str) {
                                 Ok(position) => {
                                     // Do something with the parsed position...
+                                    // self.sound_player.play_sound_effect(SoundEffect::
                                     println!("Parsed position: ({}, {}, {})", position.x, position.y, position.z);
                                 },
                                 Err(err) => {
                                     eprintln!("Error parsing estimate: {}", err);
                                 },
                             }
+                        }
+                        else if msg_str.starts_with("HB["){
+                            client_socket_wrapper.last_hb_received = Instant::now();
+                            // if msg_str.starts_with("HB: ROV"){
+
+                            // }
                         }
                     }
                     else if msg.bytes[0] == 0b11111111 { // flag for leak message

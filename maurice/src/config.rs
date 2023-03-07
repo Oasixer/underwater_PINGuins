@@ -5,6 +5,7 @@ use std::path::Path;
 
 
 const TIMEOUT_READ_MS: u64 = 1000;
+pub const HB_TIMEOUT_MS: u64 = 3000;
 pub const MSG_SIZE_BYTES: usize = 800;
 pub const OUTGOING_CMD_SIZE_BYTES: usize = 200;
 const MAX_MSG_POLL_INTERVAL_MS: u64 = 1;

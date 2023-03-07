@@ -7,8 +7,7 @@ use std::io::Write;
 use std::sync::mpsc::{channel, Sender, Receiver};
 
 use crate::utils::{create_parent_directories};
-use crate::config::UnknownIpAddrError;
-use crate::config::MSG_SIZE_BYTES;
+use crate::config::{MSG_SIZE_BYTES, HB_TIMEOUT_MS};
 use super::{
     msound_player::{ SoundEffect, },
     Maurice,
@@ -62,6 +61,18 @@ impl ClientSocketWrapper {
         self.fprint(&format!("Began recording data for {} sec\n", duration.as_secs()));
         // maurice.sound_player.play_sound_effect(SoundEffect::StartRecording);
     }
+    pub fn poll_for_disconnect(&self) -> bool{
+        if self.latest_connection_change.as_ref().unwrap().is_connected == false{
+            return false;
+        }
+        if Instant::now() - (self.last_hb_received) > Duration::from_millis(HB_TIMEOUT_MS) {
+            println!("Client {:02x} timed out, last hb was {}ms ago", self.mac[5], (Instant::now() - (self.last_hb_received)).as_millis());
+            // self.fprint("Disconnected.\n")
+            return true;
+            // self.tx_cmd_from_stdin_listener_to_client.send(Command::Disconnect).unwrap();
+        }
+        return false;
+    }
 }
 
 
@@ -69,16 +80,26 @@ impl Maurice {
     pub(super) fn accept_new_connections_nonblocking(&mut self) {
         // .accept() returns Result<(TcpStream, SocketAddr)>
         if let Ok((mut socket, addr)) = self.server.accept() {
-            println!("\n=============== PINGUIN CONNECTED {} ================", addr);
-            Self::print_commands_info();
-            socket.set_read_timeout(Some(Duration::from_millis(self.config.timeout_read_ms))).expect("Failed to set read timeout.");
-
             let ip_bytes = match addr.ip() {
                 std::net::IpAddr::V4(ipv4) => ipv4.octets(),
                 _ => panic!("Expected IPv4 address"),
             };
 
             let mac: [u8;6] = self.config.get_mac_from_ip(ip_bytes).expect("failed to get mac from ip");
+
+            // get mac last byte as string using from_utf8:
+            // let last_mac_byte_vec = vec![mac[5]];
+            // let mac_last_byte = String::from_utf8(last_mac_byte_vec).expect("failed to convert mac last byte to string");
+
+            if self.get_client_socket(mac).is_ok() {
+                println!("\n=============== PINGUIN {:02x} RE-CONNECTED ON {} ================", mac[5], addr);
+            }
+            else{
+                println!("\n=============== PINGUIN {:02x} CONNECTED ON {} ================", mac[5], addr);
+            }
+            Self::print_commands_info();
+            socket.set_read_timeout(Some(Duration::from_millis(self.config.timeout_read_ms))).expect("Failed to set read timeout.");
+
 
             let cur_datetime: DateTime<Local> = Local::now();
             
@@ -88,6 +109,7 @@ impl Maurice {
             let tx_connection_change = self.tx_connection_change.clone();
 
 
+            let (kill_me_tx, kill_me_rx) = channel::<bool>();
             let client_socket_wrapper: ClientSocketWrapper = ClientSocketWrapper {
                 mac,
                 latest_connection_change: Some(ConnectionChange{
@@ -107,6 +129,8 @@ impl Maurice {
                     duration: None,
                     end_time: None,
                 },
+                last_hb_received: Instant::now(),
+                kill_me: kill_me_tx,
                 // tx_cmd_from_stdin_listener_to_client,
             };
             // not sure if needed yet
@@ -115,8 +139,16 @@ impl Maurice {
                 is_connected: true,
                 // adc_rec_metadata_changed: None
             }).expect("failed to send connection change out of channel");
+
             
-            self.client_sockets.push(client_socket_wrapper);
+            
+            let prev_socket = self.get_client_socket(mac);
+            if prev_socket.is_ok() { //
+                self.replace_client_socket(mac, client_socket_wrapper);
+            }
+            else{
+                self.client_sockets.push(client_socket_wrapper);
+            }
 
             // let MSG_SIZE_BYTES = self.config.MSG_SIZE_BYTES;
             // let MAX_MSG_POLL_INTERVAL_MS = self.config.MAX_MSG_POLL_INTERVAL_MS;
@@ -127,6 +159,10 @@ impl Maurice {
                 // let mut buff = vec![0; config.msg_size_bytes];
                 let mut buff: [u8; MSG_SIZE_BYTES] = [0; MSG_SIZE_BYTES];
                 // let mut buff = vec![0; MSG_SIZE_BYTES];
+                if let Ok(_) = kill_me_rx.try_recv() {
+                    println!("killing client listener thread for client: {:02x}", mac[5]);
+                    break;
+                }
 
                 match socket.read_exact(&mut buff) {
                     Ok(_) => {
@@ -156,6 +192,26 @@ impl Maurice {
     }
 
     pub(super) fn poll_for_connection_changes(&mut self){
+        for client in self.client_sockets.iter_mut() {
+            if client.poll_for_disconnect(){
+                client.latest_connection_change = Some(ConnectionChange{
+                    mac: client.mac,
+                    is_connected: false,
+                    // adc_rec_metadata_changed: None
+                });
+                client.fprint_create_file("Client timed out!\n");
+                client.kill_me.send(true).expect("failed to send kill me signal to client listener thread");
+                self.sound_player.play_sound_effect(SoundEffect::Disconnect);
+                // match self.get_client_socket(connection_change.mac){
+                //     Ok(client_socket_wrapper) => {
+                //         client_socket_wrapper.fprint_create_file("Disconnected!\n");
+                //     }
+                //     Err(_) => {
+                //         panic!("client socket wrapper not found");
+                //     }
+                // }
+            }
+        }
         if let Ok(connection_change) = self.rx_connection_change.try_recv() {
             // println!("got a connection change to connected={} from the consumer thread: {}", connection_change.is_connected, connection_change.mac[5]);
             if connection_change.is_connected {

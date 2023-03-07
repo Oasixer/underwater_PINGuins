@@ -130,7 +130,7 @@ bool RovMain::loop(){
 
                 // Extract the field value based on the token prefix
                 if (token.startsWith("h")){    // just a ping
-                    client->print("hi\n");
+                    client->print("hi: ROV\n");
 
                 } else if (token.startsWith("x")){ // stop everything and go to default state;
                     adc_timer.end();
@@ -149,7 +149,7 @@ bool RovMain::loop(){
                     client->print("Changed marco polo time delay to " + String(config->speed_of_sound) + "us\n");
                 }
                 else if(token == "BECOME_STATIONARY"){
-                    client->print("Becoming stationary");
+                    client->print("Becoming STATIONARY");
                     return true;
                 } else if (token.startsWith("g")) { // talk for x times
                     n_talks_command = (uint16_t)token.substring(1).toInt();

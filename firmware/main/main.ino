@@ -10,6 +10,7 @@
 
 #define USE_ETHERNET true
 #define use_both_servers true // ahmad you should change this
+bool USE_ROV = true;
 TcpClient client = TcpClient(use_both_servers, USE_ETHERNET);
 
 config_t config = {
@@ -33,8 +34,9 @@ RovMain rov_main = RovMain(&config, &listener, &client);
 // RovMain rov_main = RovMain(&config, &listener);
 // void setup() {
 //     Serial.begin(9600);
+uint32_t hb_count = 0;
+uint32_t hb_interval_ms = 2000;
 
-bool USE_ROV = true;
 
 void setup() {
     Serial.begin(9600);
@@ -57,6 +59,13 @@ void loop() {
     if (USE_ETHERNET){
       client.poll_reconnect_if_needed();
     }
+    // check if hb_count is lower than the expected number of heartbeats sent, which is the elapsed time divided by the heartbeat interval
+    if (hb_count < millis() / hb_interval_ms){
+        // send a heartbeat
+        hb_count = millis() / hb_interval_ms;
+        client.send_hb(USE_ROV, hb_count);
+    }
+
     //client.poll_send_msgs(); // only for ADC
 
     bool change_rov_state = false;

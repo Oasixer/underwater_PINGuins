@@ -56,6 +56,7 @@ class TcpClient {
         void print(String message);
         void send_leak_detected_panic_message();
         bool check_bytes(uint16_t n);
+        void send_hb(bool rov, uint32_t hb_count);
 };
 
 // static uint8_t[SIZE] console_buffer;

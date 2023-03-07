@@ -101,7 +101,7 @@ bool StationaryMain::loop(){
 
                 // Extract the field value based on the token prefix
                 if (token.startsWith("h")){    // just a ping
-                    client->print("hi\n");
+                    client->print("hi: STATIONARY\n");
                 } else if (token == "BECOME_ROV") { // change marco polo time delay
                     client->print("Becoming ROV\n");
                     return true;

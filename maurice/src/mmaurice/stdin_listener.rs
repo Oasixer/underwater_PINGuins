@@ -5,7 +5,7 @@ use std::io::Write;
 use std::time::{Duration, Instant};
 
 use super::{
-    Command, Maurice, AdcRecMetadata, SoundEffect, ClientSocketWrapper};
+    Command, Maurice, AdcRecMetadata, SoundEffect, ClientSocketWrapper, ConnectionChange};
 use crate::{do_nothing, config::Config, utils::hex_string_to_u8};
 use crate::config::{DATA_STREAM_DIR, ADC_DATA_DIR};
 use crate::utils::{create_directories, thread_sleep};
@@ -47,7 +47,7 @@ pub fn start_stdin_listener_thread2() -> Receiver<String> {
                 Ok(line) => {
                     rl.add_history_entry(line.as_str());
                     buffer = line;
-                    println!("Line: {}", &buffer);
+                    // println!("Line: {}", &buffer);
                 },
                 Err(ReadlineError::Interrupted) => {
                     println!("CTRL-C");
@@ -87,11 +87,11 @@ impl Maurice{
     }
     
     pub(super) fn print_commands_info(){
-        println!("Commands:");
-        println!("v <up || down>                            (increase or decrease volume)");
-        println!("<xx> w <filename> <record_n_seconds>      (record to filename for n seconds)");
-        println!("<xx> n <prefix>                           (select file prefix for subsequent recordings)");
-        println!("<xx> w <record_n_seconds>                 (record to prefix_N for n seconds, N++ each time)");
+        // println!("Commands:");
+        // println!("v <up || down>                            (increase or decrease volume)");
+        // println!("<xx> w <filename> <record_n_seconds>      (record to filename for n seconds)");
+        // println!("<xx> n <prefix>                           (select file prefix for subsequent recordings)");
+        // println!("<xx> w <record_n_seconds>                 (record to prefix_N for n seconds, N++ each time)");
     }
 
     fn handle_command_for_client(&mut self, target_mac_byte: &str, tokens: Vec<&str>) -> (Option<Command>, bool){
@@ -305,6 +305,20 @@ impl Maurice{
         return None;
     }
 
+    pub(super) fn remove_client(&mut self, mac: [u8; 6]){
+        let mut index: Option<usize> = None;
+        for (i, client) in self.client_sockets.iter().enumerate(){
+            if client.mac == mac{
+                index = Some(i);
+                break;
+            }
+        }
+        if index.is_some(){
+            let index = index.unwrap();
+            self.client_sockets.remove(index);
+        }
+    }
+
     pub(super) fn poll_for_lines_from_stdin_listener(&mut self){
         let str = self.rx_stdin_listener.try_recv();
         if str.is_err() {
@@ -323,9 +337,26 @@ impl Maurice{
                     let command_str = String::from_utf8(command.bytes.to_vec()).unwrap();
                     let target_mac = command.target_mac;
                     if target_mac == [0,0,0,0,0,0]{ // send to all
+                    // clients = self.client_sockets
+                    //     .into_iter()
+                    //     .filter_map(|mut client| {
+                    //         let mut buff = msg.clone().into_bytes();
+                    //         buff.resize(MSG_SIZE, 0);
+
+                    //         client.write_all(&buff).map(|_| client).ok()
+                    //     })
+                    // .collect::<Vec<_>>();
                         for client in self.client_sockets.iter_mut(){
                             client.fprint(&format!("Sending command: {}\n", command_str));
-                            client.stream.write_all(&command.bytes).expect("unable to send command");
+                            let result = client.stream.write_all(&command.bytes);
+                            if result.is_err(){
+                                println!("Client stopped receiving commands. Removing client.");
+                                client.latest_connection_change = Some(ConnectionChange{
+                                    mac: client.mac,
+                                    is_connected: false,
+                                });
+                                // self.remove_client(client.mac); 
+                            }
                         }
                         return;
                     }
