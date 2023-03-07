@@ -217,6 +217,6 @@ sprintf("calculated time delay = %0.20f us", abs(p(2))/p(1))
 figure
 scatter(x, y); hold on;
 plot(x, polyval(p, x));
-title("Using Rising edge")
+title("Distance Found Using Trip Time")
 ylabel("dist [m]")
 xlabel("trip time [us]")

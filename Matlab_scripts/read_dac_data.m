@@ -13,7 +13,7 @@ period = 200;
 threshold = 200;
 
 %% data
-file = "dist-4-500-2"
+file = "dist-4-500-1"
 data = readUint16File("../adc_recordings/Feb23/" + file)';
 
 %% plot
