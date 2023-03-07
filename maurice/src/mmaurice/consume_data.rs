@@ -110,7 +110,7 @@ impl Maurice {
                     else if msg.bytes[0] == 0b11111111 { // flag for leak message
                         // find last non-zero byte in msg
                         client_socket_wrapper.fprint("LEAK DETECTED!!!!\n");
-                        self.sound_player.play_sound_effect(SoundEffect::Leak2);
+                        self.sound_player.play_sound_effect(SoundEffect::Leak);
                         // self.sound_player.play_sound_effect(SoundEffect::Leak);
                     }
                 } // client_socket_wrapper found
