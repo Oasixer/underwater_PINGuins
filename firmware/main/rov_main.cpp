@@ -58,7 +58,8 @@ void RovMain::shutdown(){
 void RovMain::check_if_done_round_robins(){
     if (n_round_robins_done >= n_round_robins_command){ // done round robins
         is_currently_receiving = false;
-        curr_freq_idx = 1;
+        curr_freq_idx = 0;
+        frequency_to_send = FREQUENCIES[curr_freq_idx];
         n_round_robins_done = 0;
         n_round_robins_command = 0;
 
@@ -78,7 +79,7 @@ void RovMain::reset_send_receive(){
     ts_start_talking = micros() + 2 * config->period;
     ts_response_timeout = ts_start_talking + config->response_timeout_duration;
 
-    curr_freq_idx = 1;
+    curr_freq_idx = 0;
     frequency_to_send = FREQUENCIES[curr_freq_idx];
     n_round_robins_done++;
     check_if_done_round_robins();
@@ -154,7 +155,8 @@ bool RovMain::loop(){
                     n_talks_command = 0;
                     n_round_robins_command = 0;
                     n_round_robins_done = 0;
-                    curr_freq_idx = 1;
+                    curr_freq_idx = 0;
+                    frequency_to_send = FREQUENCIES[curr_freq_idx];
                     switch_relay_to_send();
                     client->print("Stopped\n");
 
@@ -343,13 +345,14 @@ void RovMain::round_robin_receive_mode_hb(listener_output_t &listener_data){
             adc_timer.end();
 
             uint64_t trip_micros = listener_data.ts_peak - ts_start_talking;
-            trip_times_round_robin[curr_freq_idx-1] = trip_micros;
+            trip_times_round_robin[curr_freq_idx/2] = trip_micros;
 
             // float distance = micros_to_meters(trip_micros);
             ts_start_talking = listener_data.ts_peak + config->period;
             ts_response_timeout = ts_start_talking + config->response_timeout_duration;
 
-            if (++curr_freq_idx >= 4) { // done this round robin
+            curr_freq_idx += 2;
+            if (curr_freq_idx >= N_FREQUENCIES) { // done this round robin
                 float dists_3d[N_ALL_NODES] = {
                     0.0, // distance from rov to rov
                     trip_time_to_dist(trip_times_round_robin[0]), // dist to node 1
@@ -363,7 +366,7 @@ void RovMain::round_robin_receive_mode_hb(listener_output_t &listener_data){
                     ", " + String(position_estimate.y, 2) + ", " + String(position_estimate.z, 2) + "]\n");
 
                 // reset for next time
-                curr_freq_idx = 1;
+                curr_freq_idx = 0;
                 ++n_round_robins_done;
                 check_if_done_round_robins();
             }

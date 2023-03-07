@@ -16,36 +16,16 @@
 
 #define N_FREQUENCIES 6  // number of frequencies
 
-/* Define different frequencies to encode messages*/
-#define F_LOW 11000  // Hz
-#define F_HIGH 18000  // Hz
-#define F_STATIONARY_1 25000  // Hz
-#define F_STATIONARY_2 35000  // Hz
-#define F_STATIONARY_3 41000  // Hz
-#define F_ALL 49000  // Hz
-
-enum FREQ_INDICES{
-    IDX_F_LOW,
-    IDX_F_HIGH,
-    IDX_F_STATIONARY_1,
-    IDX_F_STATIONARY_2,
-    IDX_F_STATIONARY_3,
-    IDX_F_ALL,
-};
-
 static uint16_t FREQUENCIES[N_FREQUENCIES] = {
-        F_LOW,
-        F_HIGH,
-        F_STATIONARY_1,
-        F_STATIONARY_2,
-        F_STATIONARY_3,
-        F_ALL,
+    11000,  // Hz
+    18000,  // Hz
+    25000,  // Hz
+    35000,  // Hz
+    41000,  // Hz
+    49000,  // Hz
 };
 
 #define MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD 5000
-
-/* constants for message */
-#define MSG_LENGTH 50  // bits
 
 /* constants for DAC */
 #define DAC_AMPLITUDE 3600  // this results in full 60V range

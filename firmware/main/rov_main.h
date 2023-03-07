@@ -26,7 +26,7 @@ class RovMain {
         uint16_t n_talks_command = 0;
         uint16_t frequency_to_send = 18000;
 
-        uint8_t curr_freq_idx = 1;
+        uint8_t curr_freq_idx = 0;
 
         coord_3d_t node_coords_3d[N_ALL_NODES] = {{0}};
 
