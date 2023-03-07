@@ -6,6 +6,14 @@ from math import acos, cos, sin, sqrt, pow, pi
 def dist(p1, p2):
     return sqrt((p1[0] - p2[0])**2 + (p1[1] - p2[1])**2)
 
+def cosine_rule(adj1, adj2, opp):
+    cos_angle = (adj1**2 + adj2**2 - opp**2) / (2 * adj1 * adj2)
+    if cos_angle > 1.0:
+        cos_angle = 1.0
+    elif cos_angle < -1.0:
+        cos_angle = -1.0
+    return acos(cos_angle)
+
 
 if __name__ == "__main__":
     for x_1 in range(1, 10):
@@ -26,17 +34,13 @@ if __name__ == "__main__":
 
                         angles = [0, 0, 0, 0]
 
-                        angles[2] = acos(
-                            (dists[0][1]**2 + dists[0][2]**2 - dists[1][2]**2)
-                            / (2 * dists[0][1] * dists[0][2]))
+                        angles[2] = cosine_rule(dists[0][1], dists[0][2], dists[1][2])
 
                         guess_using_1 = [
-                            acos((dists[0][1] ** 2 + dists[0][3] ** 2 - dists[1][3] ** 2) / (2 * dists[0][1] * dists[0][3])),
-                            -acos((dists[0][1] ** 2 + dists[0][3] ** 2 - dists[1][3] ** 2) / (2 * dists[0][1] * dists[0][3]))]
+                            cosine_rule(dists[0][1], dists[0][3], dists[1][3]),
+                            -cosine_rule(dists[0][1], dists[0][3], dists[1][3])]
 
-                        triangle = (dists[0][2] ** 2 + dists[0][3] ** 2 - dists[2][3] ** 2) / (2 * dists[0][2] * dists[0][3])
-                        triangle = min(max(triangle, -1.0), 1.0)
-                        angle_2_to_3 = acos(triangle)
+                        angle_2_to_3 = cosine_rule(dists[0][2], dists[0][3], dists[2][3])
                         guess_using_2 = [
                             angle_2_to_3 + angles[2],
                             -angle_2_to_3 + angles[2],

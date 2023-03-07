@@ -26,7 +26,7 @@ class RovMain {
         uint16_t n_talks_command = 0;
         uint16_t frequency_to_send = 18000;
 
-        uint8_t curr_freq_idx = 1;
+        uint8_t curr_freq_idx = 0;
 
         coord_3d_t node_coords_3d[N_ALL_NODES] = {{0}};
 
@@ -47,6 +47,7 @@ class RovMain {
         void receive_mode_hb_single_freq(listener_output_t &listener_data);
         void send_mode_hb();
         float trip_time_to_dist(uint64_t trip_time);
+        void check_if_done_round_robins();
     public:
         RovMain(config_t* config, Listener* listener, TcpClient* client);
         void setup();

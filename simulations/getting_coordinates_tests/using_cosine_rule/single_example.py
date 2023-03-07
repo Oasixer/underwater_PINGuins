@@ -19,25 +19,21 @@ if __name__ == "__main__":
     actual = [
         [0, 0],
         [2, 0],
-        [-1, 0],
+        [-1, 2],
         [9, -1]
     ]
 
-    dists = np.array([[dist(p1, p2) for p2 in actual] for p1 in actual])
-    dists += np.random.randn(dists.shape[0], dists.shape[1]) * 0.1
-    dists = np.abs(dists)
+    dists = [[dist(p1, p2) for p2 in actual] for p1 in actual]
 
     angles = [0, 0, 0, 0]
 
     angles[2] = cosine_rule(dists[0][1], dists[0][2], dists[1][2])
 
     guess_using_1 = [
-        acos((dists[0][1] ** 2 + dists[0][3] ** 2 - dists[1][3] ** 2) / (2 * dists[0][1] * dists[0][3])),
-        -acos((dists[0][1] ** 2 + dists[0][3] ** 2 - dists[1][3] ** 2) / (2 * dists[0][1] * dists[0][3]))]
+        cosine_rule(dists[0][1], dists[0][3], dists[1][3]),
+        -cosine_rule(dists[0][1], dists[0][3], dists[1][3])]
 
-    triangle = (dists[0][2] ** 2 + dists[0][3] ** 2 - dists[2][3] ** 2) / (2 * dists[0][2] * dists[0][3])
-    triangle = min(max(triangle, -1.0), 1.0)
-    angle_2_to_3 = acos(triangle)
+    angle_2_to_3 = cosine_rule(dists[0][2], dists[0][3], dists[2][3])
     guess_using_2 = [
         angle_2_to_3 + angles[2],
         -angle_2_to_3 + angles[2],
