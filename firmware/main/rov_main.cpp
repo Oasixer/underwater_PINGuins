@@ -55,6 +55,17 @@ void RovMain::shutdown(){
     adc_timer.end();
 }
 
+void RovMain::check_if_done_round_robins(){
+    if (n_round_robins_done >= n_round_robins_command){ // done round robins
+        is_currently_receiving = false;
+        curr_freq_idx = 1;
+        n_round_robins_done = 0;
+        n_round_robins_command = 0;
+
+        client->print("Done all requested round robins\n");
+    }
+}
+
 void RovMain::reset_send_receive(){
     adc_timer.end();
 
@@ -62,12 +73,15 @@ void RovMain::reset_send_receive(){
         trip_times_round_robin[i] = 0;
     }
 
-    ts_start_talking = micros() + config->period;
+    // Intentionally wait extra time before talking here because of the error
+    // This ensures there's enough time for any unintended reflections to die down
+    ts_start_talking = micros() + 2 * config->period;
     ts_response_timeout = ts_start_talking + config->response_timeout_duration;
 
     curr_freq_idx = 1;
     frequency_to_send = FREQUENCIES[curr_freq_idx];
     n_round_robins_done++;
+    check_if_done_round_robins();
     is_currently_receiving = false;
     switch_relay_to_send();
 }
@@ -324,7 +338,7 @@ void RovMain::receive_mode_hb_single_freq(listener_output_t &listener_data){
 
 void RovMain::round_robin_receive_mode_hb(listener_output_t &listener_data){
     if (listener_data.finished){
-        client->print("Found freq: " + String(curr_freq_idx) + "\n");
+        client->print("Found freq: " + String(listener_data.idx_identified_freq) + "\n");
         if (listener_data.idx_identified_freq == curr_freq_idx){
             adc_timer.end();
 
@@ -351,6 +365,7 @@ void RovMain::round_robin_receive_mode_hb(listener_output_t &listener_data){
                 // reset for next time
                 curr_freq_idx = 1;
                 ++n_round_robins_done;
+                check_if_done_round_robins();
             }
 
             frequency_to_send = FREQUENCIES[curr_freq_idx];

@@ -47,6 +47,7 @@ class RovMain {
         void receive_mode_hb_single_freq(listener_output_t &listener_data);
         void send_mode_hb();
         float trip_time_to_dist(uint64_t trip_time);
+        void check_if_done_round_robins();
     public:
         RovMain(config_t* config, Listener* listener, TcpClient* client);
         void setup();
