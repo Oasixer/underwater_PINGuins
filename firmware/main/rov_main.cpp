@@ -176,7 +176,7 @@ bool RovMain::loop(){
                     config->dft_threshold = (uint32_t)token.substring(1).toInt();
                     client->print("Changed DFT threshold to " + String(config->dft_threshold) + "\n");
 
-                } else if (token.startsWith("c")){ // transmit continuously
+                } else if (token.startsWith("y")){ // yell (transmit continuously)
                     uint32_t millis_to_continuously_transmit = (uint32_t)token.substring(1).toInt();
                     client->print("Will transmit continuously for " + String(millis_to_continuously_transmit) + "ms\n");
                     is_transmit_continuously = true;
@@ -209,6 +209,12 @@ bool RovMain::loop(){
                 } else if (token.startsWith("d")) { // change duration to find peak
                     config->duration_to_find_peak = (uint16_t)token.substring(1).toInt();
                     client->print("Changed duration to find peak to " + String(config->duration_to_find_peak) + "us\n");
+                
+                } else if (token.startsWith("nd")) {
+
+                } else if (token.startsWith("c")) { // calibrate n cycles
+                    uint16_t n_cycles = (uint16_t)token.substring(1).toInt();
+                    // setup_calibration();
 
                 } else if (token.startsWith("C")) { // input of node coordinates
                     int pos2 = 1;

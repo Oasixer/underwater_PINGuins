@@ -1,4 +1,5 @@
 #include "positions.h"
+#include <wiring.h> // for pi
 
 #define MIN_2D_DISTANCE 0.001  // m
 
