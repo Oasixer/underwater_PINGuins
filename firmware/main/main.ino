@@ -5,6 +5,7 @@
 #include "stationary_main.h"
 #include "rov_main.h"
 #include "listener.h"
+#include "talker.h"
 #include "tcp_client.h"
 // #include "fourier.h"
 
@@ -26,9 +27,10 @@ config_t config = {
     false, // integrate_freq_domain
 };
 
+Talker talker = Talker(&config);
 Listener listener = Listener(&config);
 StationaryMain stationary_main = StationaryMain(&config, &listener, &client);
-RovMain rov_main = RovMain(&config, &listener, &client);
+RovMain rov_main = RovMain(&config, &listener, &client, &talker);
 // StationaryMain stationary_main = StationaryMain(&config, &listener);
 // RovMain rov_main = RovMain(&config, &listener);
 // void setup() {

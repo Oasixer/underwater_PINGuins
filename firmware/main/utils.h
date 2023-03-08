@@ -19,6 +19,7 @@ typedef struct coord_3d_t{
 
 
 uint16_t get_freq(uint8_t idx_freq);
+uint8_t freq_idx_to_node_n(uint8_t freq_idx);
 
 float convert_to_2d(float dist_3d, float depth1, float depth2);
 

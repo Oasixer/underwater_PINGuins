@@ -5,12 +5,13 @@
 #include "listener.h"
 #include "constants.h"
 #include "configurations.h"
+#include "calibration.h"
 #include "utils.h"
 
 class RovMain {
     private:
         // for receiving
-        IntervalTimer adc_timer; // for ADC read ISR @ intervals
+        // IntervalTimer adc_timer; // for ADC read ISR @ intervals
 
         // state variables
         bool is_currently_receiving = false;  // if true receiving data. else sending
@@ -37,6 +38,9 @@ class RovMain {
         config_t* config;
 
         Listener* listener;
+        Talker* talker;
+        Calibration calibration;
+        calibration_data_t* calibration_data;
         
         uint16_t* last_reading;
         TcpClient* client;
@@ -48,8 +52,9 @@ class RovMain {
         void send_mode_hb();
         float trip_time_to_dist(uint64_t trip_time);
         void check_if_done_round_robins();
+        bool is_calibrating = false;
     public:
-        RovMain(config_t* config, Listener* listener, TcpClient* client);
+        RovMain(config_t* config, Listener* listener, TcpClient* client, Talker* talker);
         void setup();
         void shutdown();
         bool loop();

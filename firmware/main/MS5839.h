@@ -64,7 +64,7 @@ int32_t MS5839_read_press(void);
 int32_t MS5839_calc_depth(void);
 
 // returns depth in mm
-int32_t get_depth_mm(void);
+int32_t get_depth_mm_50ms(void);
 
 
 

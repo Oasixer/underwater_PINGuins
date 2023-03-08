@@ -27,15 +27,15 @@ StationaryMain::StationaryMain(config_t* config, Listener* listener, TcpClient* 
 }
 
 void StationaryMain::setup(){
-
     pinMode(NO_LEAK_PIN, INPUT);
     dac_setup(DAC_PIN, DAC_CLR_PIN, HV_ENABLE_PIN);
     
     setup_relay();
-    switch_relay_to_receive();
+    switch_relay_to_receive_6ms();
     client->print("Setup relay\n");
 
-    adc_timer.begin(adc_timer_callback, ADC_PERIOD);
+    // adc_timer.begin(adc_timer_callback, ADC_PERIOD);
+    listener->start_adc_timer();
     adc_setup();
     client->print("Setup adc and timer\n");
 
@@ -46,7 +46,7 @@ void StationaryMain::setup(){
 }
 
 void StationaryMain::shutdown(){
-    adc_timer.end();
+    listener->end_adc_timer();
 }
 
 void StationaryMain::send_mode_hb(){
@@ -68,16 +68,16 @@ void StationaryMain::reply_yell(){
         // client->print("sent for " + uint64ToString(micros() - ts_start_talking) + 
         //     "us. Finished sending at " + uint64ToString(micros()) + 
         //     ". Will start listening at " + uint64ToString(ts_start_talking) + "\n");
-        switch_relay_to_receive();
-        adc_timer.begin(adc_timer_callback, ADC_PERIOD);
+        switch_relay_to_receive_6ms();
+        listener->start_adc_timer();
     }
 }
 
 bool StationaryMain::loop(){
     if(digitalRead(NO_LEAK_PIN) == THERE_IS_A_LEAK){
         digitalWrite(HV_ENABLE_PIN, LOW);    // turn off high voltage
-        switch_relay_to_receive();    // switch to receive mode
-        adc_timer.end(); // turn off ADC timer so that we only send Leak Detect messages
+        switch_relay_to_receive_6ms();    // switch to receive mode
+        listener->end_adc_timer();
         client->send_leak_detected_panic_message();
     } else {
         String message= "";
@@ -107,13 +107,14 @@ bool StationaryMain::loop(){
                     return true;
                 } else if (token.startsWith("x")){// stop trying to detect frequencies;
                     listen_for_call_and_respond = false;
-                    switch_relay_to_receive();
-                    adc_timer.begin(adc_timer_callback, ADC_PERIOD);
+                    switch_relay_to_receive_6ms();
+                    listener->start_adc_timer();
                     client->print("Stopped\n");
                 } else if (token.startsWith("g")) { // start trying to detect frequencies
                     listen_for_call_and_respond = true;
-                    switch_relay_to_receive();
-                    adc_timer.begin(adc_timer_callback, ADC_PERIOD);
+                    switch_relay_to_receive_6ms();
+                    // adc_timer.begin(adc_timer_callback, ADC_PERIOD);
+                    listener->start_adc_timer();
                     is_peak_finding = false;
                     is_currently_receiving = true;
                     listener->begin(micros());
@@ -162,8 +163,8 @@ bool StationaryMain::loop(){
                     if (listener_data.idx_identified_freq == config->my_frequency_idx){
                         is_currently_receiving = false;
                         ts_start_talking = listener_data.ts_peak + config->period;
-                        adc_timer.end();
-                        switch_relay_to_send();
+                        listener->end_adc_timer();
+                        switch_relay_to_send_5ms();
                     }
                     else{
                         listener->begin(listener_data.ts_peak + config->period - MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD);

@@ -4,7 +4,7 @@
 #include "dac_driver.h"
 
 void setup_relay();
-void switch_relay_to_receive();
-void switch_relay_to_send();
+void switch_relay_to_receive_6ms();
+void switch_relay_to_send_5ms();
 
 #endif

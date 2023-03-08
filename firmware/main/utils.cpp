@@ -22,3 +22,13 @@ float dist_between_points_3d(coord_3d_t p1, coord_3d_t p2){
 uint16_t get_freq(uint8_t idx_freq){
     return FREQUENCIES[idx_freq];
 }
+
+uint8_t freq_idx_to_node_n(uint8_t freq_idx){
+    if (freq_idx == 1){
+        return 1;
+    }
+    if (freq_idx == 3){
+        return 2;
+    }
+    return 3;
+}

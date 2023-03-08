@@ -15,8 +15,11 @@ class Listener{
         Listener(config_t *config);
 
         void begin(uint64_t ts_begin);
+        void setup_adc();
+        void end_adc_timer();
+        void start_adc_timer();
 
-        listener_output_t hb();
+        listener_output_t hb();//uint8_t listen_only_to=255);
 
     private:
         float* frequency_magnitudes;
@@ -28,6 +31,7 @@ class Listener{
         float curr_max_magnitude = 0;
         bool detected = false;
         float sum_of_freq_magnitdues_during_peak_finding[N_FREQUENCIES] = {0};
+        IntervalTimer adc_timer; // for ADC read ISR @ intervals
 };
 
 #endif

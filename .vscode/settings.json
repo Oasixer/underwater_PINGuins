@@ -1,4 +1,7 @@
 {
     "files.associations": {
+        "*.tcc": "cpp",
+        "string": "cpp",
+        "initializer_list": "cpp"
     }
 }

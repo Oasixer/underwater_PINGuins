@@ -53,6 +53,9 @@ static const char message_terminator = '\n';
 /* constants for saving trip duration*/
 #define MAX_N_TRIPS 500
 
+/* constants for calibration*/
+#define MAX_CALIBRATION_CYCLES 500
+
 /* constants for float value comparison*/
 #define EPSILON 0.000001
 

@@ -7,6 +7,18 @@ Listener::Listener(config_t *config){
     frequency_magnitudes = get_frequency_magnitudes();
 }
 
+void Listener::setup_adc(){
+    adc_setup();
+}
+
+void Listener::start_adc_timer(){
+    adc_timer.begin(adc_timer_callback, ADC_PERIOD);
+}
+
+void Listener::end_adc_timer(){
+    adc_timer.end();
+}
+
 void Listener::begin(uint64_t ts_begin){
     this->ts_start_listening = ts_begin;
     ts_peak_finding_timeout = -1;
@@ -20,9 +32,10 @@ void Listener::begin(uint64_t ts_begin){
 
 }
 
-listener_output_t Listener::hb(){
+listener_output_t Listener::hb(){//uint8_t only_listen_to){
     if (micros() >= ts_start_listening){  // if not in inactive period
         for (uint8_t i = 0; i < N_FREQUENCIES; ++i){
+            // if (only_listen_to != 255 && i != only_listen_to) continue; // if only listening to one frequency, skip the rest
             if (frequency_magnitudes[i] > curr_max_magnitude){
                 curr_max_magnitude = frequency_magnitudes[i];
                 idx_identified_freq = i;
