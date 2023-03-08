@@ -6,7 +6,7 @@
 class Talker {
     public:
         Talker(config_t* _config);
-        uint64_t begin_set_relay_return_start_time(uint16_t frequency_id);
+        uint64_t begin_yell_5ms(uint16_t frequency_id);
         bool yell();
     private:
         uint16_t freq;

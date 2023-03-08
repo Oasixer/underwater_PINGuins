@@ -10,23 +10,30 @@
 #include "constants.h"
 
 typedef struct{
-    uint64_t cycle_time_first_response;
-    uint64_t cycle_time_second_response;
-} cycle_node_result_t;
+    uint64_t first_response;
+    uint64_t second_response;
+} threeway_result_t;
 
 typedef struct{
-    cycle_node_result_t node_results[3];
+    threeway_result_t node_results[3];
     // N_ALL_NODES is 4 fyi
     distances_t dists[N_ALL_NODES]; // each distance_t is 4 floats, one for each other node/rov
 } cycle_result_t;
 
 typedef struct{
-    uint16_t retries[3]; // retries by node
+    uint16_t retries[3]; // retries used by frequency 1, 3, 5 indexed to 0, 1, 2 here
     uint16_t cycle_count;
     cycle_result_t cycle_results[MAX_CALIBRATION_CYCLES];
     distances_t averaged_distances[N_ALL_NODES]; // each distance_t is 4 floats, one for each other node/rov
     coord_3d_t node_coords_3d[N_ALL_NODES];
 } calibration_data_t;
+
+enum threeway_state_t{
+    THREEWAY_STATE_INIT,
+    THREEWAY_STATE_YELL,
+    THREEWAY_STATE_LISTEN_1,
+    THREEWAY_STATE_LISTEN_2
+};
 
 class Calibration {
     public:
@@ -51,28 +58,29 @@ class Calibration {
         Listener* listener;
         Talker* talker;
         config_t* config;
-        uint64_t ts_cycle_node_start;
+        uint64_t ts_threeway_start;
         uint64_t ts_listen_start;
         uint64_t ts_listen_timeout;
         uint8_t calibrating_node_135; // 1, then 3, then 5
-        uint8_t start_yell_listen_x2_0123; // 0 then 1 then 2 then 3
+        uint8_t threeway_state; // 0 then 1 then 2 then 3
                                            // for states in name respectively
         // cycle_result_t cycle_results[MAX_CALIBRATION_CYCLES];
         // uint16_t cycle_count;
         uint16_t n_cycles_cmd;
         calibration_data_t cal_data;
-
-        bool incorrect_frequency(uint8_t, uint8_t);
-        bool save_result_and_return_should_increment_node(listener_output_t* result, uint8_t node_id_to_listen_for);
+        bool check_timeout_and_freq(listener_output_t* result, uint8_t node_id_to_listen_for);
+        bool handle_result_and_return_should_increment_node(listener_output_t* result, uint8_t node_id_to_listen_for);
         bool increment_node_and_return_should_increment_cycle();
         bool increment_cycle_return_is_calibration_done();
         bool listen_return_is_calibration_done();
 
         coord_3d_t get_coord_from_string(String str);
         uint64_t yell_to_listen_offset();
+        uint64_t prev_listen_finish_to_listen_offset();
         uint64_t listen_start_to_timeout_offset();
+        void init_node_cycle_start_yell_5ms();
 
-        // void trip_times_to_calibration_dists(distances_t dists[N_ALL_NODES], cycle_node_result_t measured_times[3]);
+        // void trip_times_to_calibration_dists(distances_t dists[N_ALL_NODES], threeway_result_t measured_times[3]);
         void resolve_cycle_dists();
         // void convert_trip_times_to_dists();
         void average_dists_and_get_coords();

@@ -8,7 +8,7 @@ Talker::Talker(config_t* _config){
     config = _config;
 }
 
-uint64_t Talker::begin_set_relay_return_start_time(uint16_t frequency_id){
+uint64_t Talker::begin_yell_5ms(uint16_t frequency_id){
     freq = get_freq(frequency_id);
     switch_relay_to_send_5ms();
 
