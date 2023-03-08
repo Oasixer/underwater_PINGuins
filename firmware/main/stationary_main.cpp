@@ -57,8 +57,7 @@ void StationaryMain::send_mode_hb(){
 
 void StationaryMain::reply_yell(){
     if (micros() - ts_start_talking < config->micros_send_duration){ // keep sending
-        uint16_t my_freq = get_freq(config->my_frequency_idx);
-        dac_set_analog_float(sinf(2 * M_PI * my_freq / 1000000 * (float)(micros() % (1000000 / my_freq))));
+        dac_set_analog_float(sinf(2 * M_PI * freq_to_send / 1000000 * (float)(micros() % (1000000 / freq_to_send))));
     } else { // finished beep
         ts_start_listening = micros() + config->period - MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD;
         listener->begin(ts_start_listening);
@@ -107,6 +106,7 @@ bool StationaryMain::loop(){
                     return true;
                 } else if (token.startsWith("x")){// stop trying to detect frequencies;
                     listen_for_call_and_respond = false;
+                    freq_to_send = get_freq((my_stationary_idx - 1) * 2);
                     switch_relay_to_receive_6ms();
                     listener->start_adc_timer();
                     client->print("Stopped\n");
@@ -120,9 +120,11 @@ bool StationaryMain::loop(){
                     listener->begin(micros());
                     client->print("Started\n");
 
-                } else if (token.startsWith("f")) {    // change my frequency
-                    config->my_frequency_idx = (uint16_t)token.substring(1).toInt();
-                    client->print("Changed my frequency to " + String(config->my_frequency_idx) + "\n");
+                } else if (token.startsWith("i")) {    // change my frequency
+                    my_stationary_idx = (uint8_t)token.substring(1).toInt();
+                    freq_to_send = get_freq((my_stationary_idx - 1) * 2);
+                    client->print("Became Stationary " + String(my_stationary_idx) + 
+                        ", Changed my frequency to " + String(freq_to_send) + "Hz\n");
 
                 } else if (token.startsWith("N")) {    // change window size
                     config->fourier_window_size = (uint16_t)token.substring(1).toInt();
@@ -160,7 +162,17 @@ bool StationaryMain::loop(){
             if (is_currently_receiving){
                 listener_output_t listener_data = listener->hb();
                 if (listener_data.finished){
-                    if (listener_data.idx_identified_freq == config->my_frequency_idx){
+                    if (listener_data.idx_identified_freq == (my_stationary_idx - 1) * 2){
+                        // respond with same frequency received
+                        freq_to_send = get_freq(listener_data.idx_identified_freq);
+                        is_currently_receiving = false;
+                        ts_start_talking = listener_data.ts_peak + config->period;
+                        adc_timer.end();
+                        switch_relay_to_send_5ms();
+                    }
+                    else if (listener_data.idx_identified_freq == my_stationary_idx * 2 - 1) {
+                        // respond with frequency received + 1 % 6
+                        freq_to_send = get_freq((listener_data.idx_identified_freq + 1) % N_FREQUENCIES);
                         is_currently_receiving = false;
                         ts_start_talking = listener_data.ts_peak + config->period;
                         listener->end_adc_timer();

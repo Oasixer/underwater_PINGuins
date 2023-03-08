@@ -16,7 +16,6 @@ TcpClient client = TcpClient(use_both_servers, USE_ETHERNET);
 config_t config = {
     500, // fourier_window_size
     25000,  // dft_threshold
-    3,  // my_frequency_idx
     1000,  // duration_to_find_peak
     1000,  // micros_send_duration
     400000,  // response_timeout_duration
