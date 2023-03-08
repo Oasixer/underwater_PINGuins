@@ -5,6 +5,7 @@
 #include "constants.h"
 #include "configurations.h"
 #include "listener.h"
+#include "utils.h"
 
 // void stationary_main_setup(TcpClient& client);
 // void stationary_main_loop(TcpClient& client);
@@ -24,6 +25,8 @@ class StationaryMain {
         uint64_t ts_peak_finding_timeout = 0;
 
         uint8_t idx_freq_detected = 0;
+        uint8_t my_stationary_idx = 1;
+        uint16_t freq_to_send = get_freq(my_stationary_idx);
 
         float curr_max_magnitude = 0;
 
