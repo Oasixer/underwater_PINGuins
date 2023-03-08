@@ -79,7 +79,7 @@ uint64_t Calibration::listen_to_yell_offset(){
 }
 
 
-coord_3d_t get_coord_from_string(String& str){
+coord_3d_t get_coord_from_string(String str){
     int idx_delimiter_1 = str.indexOf(',');
     int idx_delimiter_2 = str.indexOf(',', idx_delimiter_1 + 1);
     return coord_3d_t{
