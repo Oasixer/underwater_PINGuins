@@ -153,6 +153,8 @@ bool RovMain::loop(){
                 curr_freq_idx = 0;
                 frequency_to_send = FREQUENCIES[curr_freq_idx];
                 switch_relay_to_send_5ms();
+                is_calibrating = false;
+                listener->end_adc_timer();
                 client->print("Stopped\n");
 
             } else if (token.startsWith("b")) { // change marco polo time delay
@@ -228,6 +230,11 @@ bool RovMain::loop(){
             } else if (token.startsWith("c")) { // calibrate n cycles
                 uint16_t n_cycles = (uint16_t)token.substring(1).toInt();
                 calibration_data = calibration.begin(n_cycles);
+                // setup_calibration();
+
+            // } else if (token.startsWith("x")) { // calibrate n cycles
+            //     uint16_t n_cycles = (uint16_t)token.substring(1).toInt();
+            //     calibration_data = calibration.begin(n_cycles);
                 // setup_calibration();
 
             } else if (token.startsWith("C")) { // input of node coordinates
