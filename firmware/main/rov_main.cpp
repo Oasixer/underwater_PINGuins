@@ -359,7 +359,7 @@ void RovMain::round_robin_receive_mode_hb(listener_output_t &listener_data){
                     calibration.trip_time_to_dist(trip_times_round_robin[1]), // dist to node 2
                     calibration.trip_time_to_dist(trip_times_round_robin[2]), // dist to node 3
                 };
-                coord_3d_t position_estimate = multilaterate(calibration_data->node_coords_3d, dists_3d, curr_depth, 0);
+                coord_3d_t position_estimate = multilaterate(calibration_data->node_coords_3d, dists_3d, curr_depth);
                 client->print("Distances: [0.0, " + String(dists_3d[1], 2) + ", " + 
                     String(dists_3d[2], 2) + ", " + String(dists_3d[3], 2) + "], Depth: " + 
                     String(curr_depth, 3) + ", Estimate: [" + String(position_estimate.x, 2) + 

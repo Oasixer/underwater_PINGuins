@@ -45,7 +45,6 @@ bool calculate_coordinates(coord_3d_t *coords, distances_t dists_3d[N_ALL_NODES]
         // Place the ROV as the origin
         coords[0].x = 0;
         coords[0].y = 0;
-        // coords[0].z = 0;
 
         // Place node 1 to right
         coords[1].x = dists_2d[0].dist[1];
@@ -90,9 +89,9 @@ bool calculate_coordinates(coord_3d_t *coords, distances_t dists_3d[N_ALL_NODES]
         }
         coords[3].y = y3_averages[i_min_diff]; // the actual y3 is the most consistent value
 
-        // now that we know the 2d distances, calculate depths
+        // now that we know the 2d distances, store depths
         for (uint8_t i = 0; i < N_ALL_NODES; ++i){
-            coords[i].z = depths[i] - depths[I_ROV]; // z-coordinate is the difference in depth between node and ROV
+            coords[i].z = depths[i]; // z-coordinate is the depth
         }
     }
     return possible_to_calculate;
@@ -101,10 +100,10 @@ bool calculate_coordinates(coord_3d_t *coords, distances_t dists_3d[N_ALL_NODES]
 
 bool test_calculate_coordinates(){
     // Test in the following coordinates
-    coord_3d_t origin_coord = {0, 0, 0};
-    coord_3d_t stationary_1_coords[2] = {{1, 0, 0}, {2.5, 0, -3}};  // both in 1st quadrant
-    coord_3d_t stationary_2_coords[3] = {{3, 2, -2}, {-1, 4, 2}, {0, 3, -2}}; // 1st, 2nd quadrant, and y axis
-    coord_3d_t stationary_3_coords[4] = {{2, 5, -4}, {-4, 1, 0}, {-7, -2, 2}, {2, 5, -1}}; // each quadrant
+    coord_3d_t origin_coord = {0, 0, -1};
+    coord_3d_t stationary_1_coords[2] = {{1, 0, -1}, {2.5, 0, -3}};  // both in 1st quadrant
+    coord_3d_t stationary_2_coords[3] = {{3, 2, -2}, {-1, 4, -1}, {0, 3, -2}}; // 1st, 2nd quadrant, and y axis
+    coord_3d_t stationary_3_coords[4] = {{2, 5, -4}, {-4, 1, -1}, {-7, -2, 2}, {2, 5, -1}}; // each quadrant
     float rov_depths[2] = {-5, -10};  // two different depths of the ROV
 
     bool quadrant_tests_pass = true;
@@ -124,7 +123,7 @@ bool test_calculate_coordinates(){
                     // create depths array
                     float depths[N_ALL_NODES] = {0};
                     for (uint8_t i = 0; i < N_ALL_NODES; ++i) {
-                        depths[i] = actual_coords[i].z + rov_depths[idx_depth];
+                        depths[i] = actual_coords[i].z;
                     }
 
                     // create array of distances between nodes
@@ -172,10 +171,10 @@ bool test_calculate_coordinates(){
     /* for completeness, test that edge cases won't break the code */
     // if ROV collinear with nodes, should not cause an issue
     coord_3d_t rov_collinear_actual[N_ALL_NODES] = {
-            {0, 0, 0},
-            {1, 0, 0},
-            {-2, 0, 0},
-            {4, -3, 0}
+            {0, 0, -1},
+            {1, 0, -1},
+            {-2, 0, -1},
+            {4, -3, -1}
     };
     distances_t distances_collinear[N_ALL_NODES] = {
             {{0, 1, 2, 5}},
@@ -190,10 +189,10 @@ bool test_calculate_coordinates(){
 
     // test if all three nodes are collinear
     coord_3d_t all_three_collinear_coords_actual[N_ALL_NODES] = {
-            {0, 0, 0},
-            {1, 0, 0},
-            {1, 1, 0},
-            {1, -1, 0},
+            {0, 0, -1},
+            {1, 0, -1},
+            {1, 1, -1},
+            {1, -1, -1},
     };
     distances_t all_three_collinear_distances[N_ALL_NODES] = {
             {{0, 1, sqrtf(2), sqrtf(2)}},

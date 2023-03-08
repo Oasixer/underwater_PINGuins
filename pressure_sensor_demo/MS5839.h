@@ -20,7 +20,7 @@
 //Physics Deffs
 #define WATER_DENSITY 997 // kg/m3
 
-#define PRESS_ZERO 96950 //Pa
+#define PRESS_ZERO 99972 //Pa
 
 
 typedef enum {

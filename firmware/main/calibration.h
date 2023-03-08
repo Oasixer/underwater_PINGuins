@@ -58,6 +58,7 @@ class Calibration {
         Listener* listener;
         Talker* talker;
         config_t* config;
+        uint64_t ts_delay_threeway_until;
         uint64_t ts_threeway_start;
         uint64_t ts_listen_start;
         uint64_t ts_listen_timeout;
@@ -78,7 +79,8 @@ class Calibration {
         uint64_t yell_to_listen_offset();
         uint64_t prev_listen_finish_to_listen_offset();
         uint64_t listen_start_to_timeout_offset();
-        void init_node_cycle_start_yell_5ms();
+        uint64_t listen_to_yell_offset();
+        void init_threeway_start_yell_5ms();
 
         // void trip_times_to_calibration_dists(distances_t dists[N_ALL_NODES], threeway_result_t measured_times[3]);
         void resolve_cycle_dists();
