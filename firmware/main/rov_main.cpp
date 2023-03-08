@@ -229,6 +229,7 @@ bool RovMain::loop(){
 
             } else if (token.startsWith("c")) { // calibrate n cycles
                 uint16_t n_cycles = (uint16_t)token.substring(1).toInt();
+
                 calibration_data = calibration.begin(n_cycles);
                 // setup_calibration();
 
@@ -238,10 +239,7 @@ bool RovMain::loop(){
                 // setup_calibration();
 
             } else if (token.startsWith("C")) { // input of node coordinates
-                // calibration.manual_calibration_coords(token,)
-                // curr_depth = (float)get_depth_mm() / 1000.0;
-                // client->print(new_coord_string + "]\nSet og depth to " + String(og_depth, 4) + "m\n");
-                client->print("feature disabled for now...\n");
+                calibration.manual_calibration_coords(token);
             }
         }
     }

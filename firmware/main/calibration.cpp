@@ -300,22 +300,23 @@ void Calibration::update_rov_depth_50ms(){
 
 
 // !!!! We can bring this back if we need it...
-// void Calibration::manual_calibration_coords(const String token, const float depth){
-//     int pos2 = 1;
-//     for (uint8_t i = 0; i < N_ALL_NODES; ++i){
-//         int next_pos2 = token.indexOf(';', pos2);
-//         if (next_pos2 == -1) {
-//             next_pos2 = token.length();
-//         }
-//         cal_data.node_coords_3d[i] = get_coord_from_string(token.substring(pos2, next_pos2));
-//         pos2 = next_pos2 + 1;
-//     }
-//     // og_depth = (float)get_depth_mm() / 1000.0;
+void Calibration::manual_calibration_coords(const String token){
+    int pos2 = 1;
+    for (uint8_t i = 0; i < N_ALL_NODES; ++i){
+        int next_pos2 = token.indexOf(';', pos2);
+        if (next_pos2 == -1) {
+            next_pos2 = token.length();
+        }
+        cal_data.node_coords_3d[i] = get_coord_from_string(token.substring(pos2, next_pos2));
+        pos2 = next_pos2 + 1;
+    }
+    // og_depth = (float)get_depth_mm() / 1000.0;
 
-//     String new_coord_string = "Updated coordinates: [";
-//     for (uint8_t i = 0; i < N_ALL_NODES; ++i){
-//         new_coord_string += "[" + String(cal_data.node_coords_3d[i].x, 2) + ", " + 
-//                             String(cal_data.node_coords_3d[i].y, 2) + ", " + 
-//                             String(cal_data.node_coords_3d[i].z, 2) + "]";
-//     }
-// }
+    String new_coord_string = "Updated coordinates: [";
+    for (uint8_t i = 0; i < N_ALL_NODES; ++i){
+        new_coord_string += "[" + String(cal_data.node_coords_3d[i].x, 2) + ", " + 
+                            String(cal_data.node_coords_3d[i].y, 2) + ", " + 
+                            String(cal_data.node_coords_3d[i].z, 2) + "]";
+    }
+    is_calibrated = true;
+}

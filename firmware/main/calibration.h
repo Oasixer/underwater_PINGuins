@@ -49,7 +49,7 @@ class Calibration {
                     
 
         bool calibration_in_progress_tick(); // return true if done
-        void manual_calibration_coords(const String token, const float depth);
+        void manual_calibration_coords(const String token);
         calibration_data_t* begin(uint16_t _n_cycles_cmd);
         float trip_time_to_dist(uint64_t trip_time);
         void Calibration::set_manual_depths(const String depths_str);
