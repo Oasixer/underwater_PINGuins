@@ -171,6 +171,10 @@ bool RovMain::loop(){
                 client->print("Gonna talk " + String(n_talks_command) + " times\n");
 
             } else if (token.startsWith("R")) { // find position
+                if (!calibration.is_calibrated){
+                    client->print("Must calibrate (auto or manual) first!");
+                    continue;
+                }
                 n_round_robins_command = (uint16_t)token.substring(1).toInt();
                 ts_start_talking = micros();    // start talking now
                 ts_response_timeout = ts_start_talking + config->response_timeout_duration;
@@ -359,7 +363,7 @@ void RovMain::round_robin_receive_mode_hb(listener_output_t &listener_data){
                     calibration.trip_time_to_dist(trip_times_round_robin[1]), // dist to node 2
                     calibration.trip_time_to_dist(trip_times_round_robin[2]), // dist to node 3
                 };
-                coord_3d_t position_estimate = multilaterate(calibration_data->node_coords_3d, dists_3d, curr_depth);
+                coord_3d_t position_estimate = multilaterate(calibration_data->node_coords_3d, dists_3d, curr_depth, 0);
                 client->print("Distances: [0.0, " + String(dists_3d[1], 2) + ", " + 
                     String(dists_3d[2], 2) + ", " + String(dists_3d[3], 2) + "], Depth: " + 
                     String(curr_depth, 3) + ", Estimate: [" + String(position_estimate.x, 2) + 
