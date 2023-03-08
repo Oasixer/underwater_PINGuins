@@ -42,6 +42,7 @@ calibration_data_t* Calibration::begin(uint16_t _n_cycles_cmd){
     threeway_state = 0;
     cal_data.cycle_count = 0;
         
+    ts_delay_threeway_until = micros();
     ts_listen_start = 0; // doesnt need reset due to being set before use anyway, but for explicitness reset to 0
     ts_listen_timeout = 0; // doesnt need reset due to being set before use anyway, but for explicitness reset to 0
     ts_threeway_start = 0; // doesnt need reset due to being set before use anyway, but for explicitness reset to 0
@@ -66,10 +67,14 @@ uint64_t Calibration::yell_to_listen_offset(){
     return config->micros_send_duration + config->period - MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD;
 }
 uint64_t Calibration::prev_listen_finish_to_listen_offset(){
-    return config->period;
+    return config->period - MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD;
 }
 
 uint64_t Calibration::listen_start_to_timeout_offset(){
+    return config->period;
+}
+
+uint64_t Calibration::listen_to_yell_offset(){
     return config->period;
 }
 
@@ -84,7 +89,7 @@ coord_3d_t get_coord_from_string(String& str){
     };
 }
 
-void Calibration::init_node_cycle_start_yell_5ms(){
+void Calibration::init_threeway_start_yell_5ms(){
     cycle_result_t* cycle_result = &cal_data.cycle_results[cal_data.cycle_count];
     threeway_result_t* threeway_result = &cycle_result->node_results[freq_idx_to_node_n(calibrating_node_135)];
     threeway_result->first_response = 0;
@@ -92,14 +97,17 @@ void Calibration::init_node_cycle_start_yell_5ms(){
     ts_threeway_start = talker->begin_yell_5ms(calibrating_node_135);
     ts_listen_start = ts_threeway_start + yell_to_listen_offset();
     ts_listen_timeout = 0; // doesnt need reset due to being set before use anyway, but for explicitness reset to 0
-    threeway_state = 1;
+    threeway_state = THREEWAY_STATE_YELL;
 }
 
 bool Calibration::calibration_in_progress_tick(){
     // start_yell_listen_x2_0123 is a state machine.
     //  ->  0= start, 1= send, 2= listen first reply, 3= listen second reply
     if (threeway_state == THREEWAY_STATE_INIT){ // starting node
-        init_node_cycle_start_yell_5ms();
+        if (micros() < ts_delay_threeway_until){
+            return false; // not ready to start yet
+        }
+        init_threeway_start_yell_5ms();
         threeway_state = THREEWAY_STATE_YELL; // gets set in init_node_cycle, but for explicitness
         return false; // only return true when done calibration
     }
@@ -175,8 +183,17 @@ bool Calibration::handle_result_and_return_should_increment_node(listener_output
     if (retry_due_to_fail){
         cal_data.retries[node_id_to_listen_for]++;
         threeway_state = THREEWAY_STATE_INIT;
+        listener->end_adc_timer();
+        ts_delay_threeway_until = micros() + listen_to_yell_offset();
+        switch_relay_to_send_5ms();
         return false; // return false = dont increment node, retry it instead
     }
+
+    if (!result->finished){ // return false = dont increment node (im not ready yet)
+        return false;
+    }
+
+    // Finished listening and received the expected frequency
 
     cycle_result_t* cycle_result = &cal_data.cycle_results[cal_data.cycle_count];
     threeway_result_t* threeway_result = &cycle_result->node_results[freq_idx_to_node_n(calibrating_node_135)];
@@ -186,14 +203,18 @@ bool Calibration::handle_result_and_return_should_increment_node(listener_output
         threeway_result->first_response = elapsed_since_threeway_start;
         ts_listen_start = result->ts_peak + prev_listen_finish_to_listen_offset();
         ts_listen_timeout = ts_listen_start + listen_start_to_timeout_offset();
+        listener->begin(ts_listen_start);
         threeway_state = THREEWAY_STATE_LISTEN_2;
         return false; // dont increment node
     }
     else if (threeway_state == THREEWAY_STATE_LISTEN_2){
         threeway_result->second_response = elapsed_since_threeway_start;
         threeway_state = THREEWAY_STATE_INIT; // for explicitness       (set in increment_node)
-        ts_listen_start = 0; //           for explicitness, unnecessary reset to 0 (set in init_node_cycle_start_yell_5ms)
-        ts_listen_timeout = 0; //         for explicitness, unnecessary reset to 0 (set in init_node_cycle_start_yell_5ms)
+        ts_listen_start = 0; //           for explicitness, unnecessary reset to 0 (set in init_threeway_start_yell_5ms)
+        ts_listen_timeout = 0; //         for explicitness, unnecessary reset to 0 (set in init_threeway_start_yell_5ms)
+        listener->end_adc_timer();
+        switch_relay_to_send_5ms();
+        ts_delay_threeway_until = result->ts_peak + listen_to_yell_offset();
         return true; // ready to increment to the next node (next threeway)
     }
     else {
@@ -207,6 +228,7 @@ bool Calibration::check_timeout_and_freq(listener_output_t* result, uint8_t node
     if (!result->finished){
         if (micros() >= ts_listen_timeout){
             char msg[80];
+            // TODO: printing uint64s sucks listen_start_to_timeout_offset is a uint64
             sprintf(msg, "ERROR: timeout after %umicros listening for id %u\n",listen_start_to_timeout_offset(), node_id_to_listen_for);
             client->print(String(msg));
             return false;

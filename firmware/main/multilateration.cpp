@@ -30,7 +30,7 @@ void get_points_of_intersection(coord_2d_t *intersections, float dists[2], coord
     intersections[1].y = x_local*sinf(angle) + y2_local*cosf(angle) + coords[0].y;
 }
 
-coord_3d_t multilaterate(coord_3d_t node_coords_3d[N_ALL_NODES], float dists_3d[N_ALL_NODES], float curr_depth, float og_depth){
+coord_3d_t multilaterate(coord_3d_t node_coords_3d[N_ALL_NODES], float dists_3d[N_ALL_NODES], float curr_depth){
     // ensure that dists are not negative
     for (uint8_t i = 0; i < N_ALL_NODES; ++i){
         if (dists_3d[i] < 0.0){
@@ -41,7 +41,7 @@ coord_3d_t multilaterate(coord_3d_t node_coords_3d[N_ALL_NODES], float dists_3d[
     // get 2d projections
     float dists_2d[N_ALL_NODES];
     for (uint8_t i = 0; i < N_ALL_NODES; ++i){
-        dists_2d[i] = convert_to_2d(dists_3d[i], node_coords_3d[i].z, curr_depth - og_depth);
+        dists_2d[i] = convert_to_2d(dists_3d[i], node_coords_3d[i].z, curr_depth);
     }
 
     // get 2d coordinates
@@ -103,7 +103,7 @@ coord_3d_t multilaterate(coord_3d_t node_coords_3d[N_ALL_NODES], float dists_3d[
     coord_3d_t rov_position = {
             estimate.x,
             estimate.y,
-            curr_depth - og_depth,
+            curr_depth,
     };
     return rov_position;
 }
