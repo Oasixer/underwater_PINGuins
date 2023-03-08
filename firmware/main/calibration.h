@@ -53,6 +53,7 @@ class Calibration {
         config_t* config;
         uint64_t ts_cycle_node_start;
         uint64_t ts_listen_start;
+        uint64_t ts_listen_timeout;
         uint8_t calibrating_node_135; // 1, then 3, then 5
         uint8_t start_yell_listen_x2_0123; // 0 then 1 then 2 then 3
                                            // for states in name respectively
@@ -69,6 +70,7 @@ class Calibration {
 
         coord_3d_t get_coord_from_string(String str);
         uint64_t yell_to_listen_offset();
+        uint64_t listen_start_to_timeout_offset();
 
         // void trip_times_to_calibration_dists(distances_t dists[N_ALL_NODES], cycle_node_result_t measured_times[3]);
         void resolve_cycle_dists();

@@ -64,6 +64,10 @@ uint64_t Calibration::yell_to_listen_offset(){
     return config->micros_send_duration + config->period - MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD;
 }
 
+uint64_t Calibration::listen_start_to_timeout_offset(){
+    return config->period;
+}
+
 
 coord_3d_t get_coord_from_string(String& str){
     int idx_delimiter_1 = str.indexOf(',');
@@ -84,7 +88,8 @@ bool Calibration::calibration_in_progress_tick(){
         node_result->cycle_time_first_response = 0;
         node_result->cycle_time_second_response = 0;
         ts_cycle_node_start = talker->begin_set_relay_return_start_time(calibrating_node_135);
-        ts_listen_start = ts_cycle_node_start - yell_to_listen_offset();
+        ts_listen_start = ts_cycle_node_start + yell_to_listen_offset();
+        start_yell_listen_x2_0123 = 1;
         return false; // only return true when done calibration
     }
     else if (start_yell_listen_x2_0123 == 1){ // yelling
@@ -92,6 +97,7 @@ bool Calibration::calibration_in_progress_tick(){
         if (yell_completed){ 
             start_yell_listen_x2_0123 = 2;
             switch_relay_to_receive_6ms();
+            ts_listen_timeout = ts_listen_start + listen_start_to_timeout_offset();
             update_rov_depth_50ms(); // blocking stuff
             listener->begin(ts_listen_start);
             listener->start_adc_timer();
@@ -115,7 +121,11 @@ bool Calibration::calibration_in_progress_tick(){
 bool Calibration::listen_return_is_calibration_done(){ 
     uint8_t node_id_to_listen_for = (calibrating_node_135 + 1) % 6;
     listener_output_t result = listener->hb();
-    if (result.finished){
+    if (micros() >= ts_listen_timeout){
+        start_yell_listen_x2_0123 = 0;
+        cal_data.retries[freq_idx_to_node_n(calibrating_node_135)] += 1;
+    }
+    else if (result.finished){
         // incorrect_frequency will client-> print a message if error
         if (save_result_and_return_should_increment_node(&result, node_id_to_listen_for)){
             if (increment_node_and_return_should_increment_cycle()){
@@ -163,6 +173,7 @@ bool Calibration::save_result_and_return_should_increment_node(listener_output_t
     if (start_yell_listen_x2_0123 == 2){
         node_result->cycle_time_first_response = cycle_time;
         start_yell_listen_x2_0123++;
+        // TODO: update ts_start litensing and ts_timeout
         return false;
     }
     else if (start_yell_listen_x2_0123 == 3){
@@ -202,15 +213,14 @@ void Calibration::average_dists_and_get_coords(){
 
     // Now cal_data.averaged_distances is pooulated with distances_t[4]
     // which contains the averaged distances between each node and each other node.
-    // Convert to coordinates_t[4] and save to cal_data.coords:
-    coord_3d_t coords[N_ALL_NODES];
+    // Convert to coordinates_t[4] and save to cal_data.node_coords_3d:
 
     if (!has_depths){
         for (int i = 0; i < 3; i++){
             depths[i+1] = depths[0];
         }
     }
-    calculate_coordinates(coords, cal_data.averaged_distances, depths);
+    calculate_coordinates(cal_data.node_coords_3d, cal_data.averaged_distances, depths);
 }
 
 void Calibration::resolve_cycle_dists(){
