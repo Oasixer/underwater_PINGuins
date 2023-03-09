@@ -51,7 +51,7 @@ static const char message_delimiter = ' ';
 static const char message_terminator = '\n';
 
 /* constants for saving trip duration*/
-#define MAX_N_TRIPS 500
+#define MAX_N_TRIPS 50
 
 /* constants for calibration*/
 #define MAX_CALIBRATION_CYCLES 50

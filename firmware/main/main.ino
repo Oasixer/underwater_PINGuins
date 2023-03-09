@@ -35,7 +35,7 @@ RovMain rov_main = RovMain(&config, &listener, &client, &talker);
 // void setup() {
 //     Serial.begin(9600);
 
-bool USE_ROV = true;
+bool USE_ROV = false;
 
 void setup() {
     Serial.begin(9600);

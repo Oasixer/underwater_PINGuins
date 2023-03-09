@@ -83,7 +83,7 @@ bool StationaryMain::loop(){
         if (client->has_cmd_available()){
             message = client->get_incoming_cmd();
         }
-        else if (Serial.available() > 0){
+        else if (Serial.available()){
             message = Serial.readStringUntil(message_terminator);
         }
         if (message.length() > 0){

@@ -15,9 +15,6 @@
 #include <stdio.h>
 #include <math.h>
 
-// buffer to store trip times
-#define MAX_N_TRIPS 500
-
 RovMain::RovMain(config_t* config, Listener* listener, TcpClient* client, Talker* talker){
     frequency_magnitudes = get_frequency_magnitudes();
     last_reading = get_last_reading();
@@ -336,7 +333,7 @@ void RovMain::receive_mode_hb_single_freq(listener_output_t &listener_data){
             client->print(msg + "]\n\n");
             n_talks_command = 0;
             n_talks_done = 0;
-        } else if (n_talks_done > MAX_N_TRIPS){
+        } else if (n_talks_done >= MAX_N_TRIPS){
             n_talks_done = 0;
         }
     }
