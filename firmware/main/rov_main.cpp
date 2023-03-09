@@ -116,9 +116,7 @@ bool RovMain::loop(){
     //Serial.println("adc main()");
 
     if (client->has_cmd_available()){
-        Serial.println("grab cmd");
         message = client->get_incoming_cmd();
-        Serial.println("got mnsg");
     }
     else if (Serial.available() > 0){
         message = Serial.readStringUntil(message_terminator);

@@ -37,6 +37,9 @@ RovMain rov_main = RovMain(&config, &listener, &client, &talker);
 
 bool USE_ROV = false;
 
+uint32_t hb_count = 0;
+uint32_t hb_interval_ms = 2000;
+
 void setup() {
     Serial.begin(9600);
 
@@ -59,7 +62,12 @@ void loop() {
       client.poll_reconnect_if_needed();
     }
     //client.poll_send_msgs(); // only for ADC
-
+    // check if hb_count is lower than the expected number of heartbeats sent, which is the elapsed time divided by the heartbeat interval
+    if (hb_count < millis() / hb_interval_ms){
+        // send a heartbeat
+        hb_count = millis() / hb_interval_ms;
+        client.send_hb(USE_ROV, hb_count);
+    }
     bool change_rov_state = false;
     if (USE_ROV){
         change_rov_state = rov_main.loop();

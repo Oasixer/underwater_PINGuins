@@ -110,6 +110,7 @@ bool Calibration::calibration_in_progress_tick(){
         }
         init_threeway_start_yell_5ms();
         threeway_state = THREEWAY_STATE_YELL; // gets set in init_node_cycle, but for explicitness
+        client->print("started calibration threeway\n");
         return false; // only return true when done calibration
     }
     else if (threeway_state == THREEWAY_STATE_YELL){ // yelling
