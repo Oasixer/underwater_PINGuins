@@ -9,7 +9,7 @@
 #include "tcp_client.h"
 // #include "fourier.h"
 
-#define USE_ETHERNET true
+#define USE_ETHERNET false
 #define use_both_servers true // ahmad you should change this
 TcpClient client = TcpClient(use_both_servers, USE_ETHERNET);
 
@@ -24,6 +24,7 @@ config_t config = {
     200056.07745910956873558462, // marco_polo_time_delay
     true, // use_rising_edge
     false, // integrate_freq_domain
+    false, // use_pressure_sensor
 };
 
 Talker talker = Talker(&config);
@@ -35,7 +36,7 @@ RovMain rov_main = RovMain(&config, &listener, &client, &talker);
 // void setup() {
 //     Serial.begin(9600);
 
-bool USE_ROV = false;
+bool USE_ROV = true;
 
 uint32_t hb_count = 0;
 uint32_t hb_interval_ms = 2000;

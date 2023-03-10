@@ -95,7 +95,9 @@ void RovMain::send_mode_hb(){
             dac_set_analog_float(sinf(2 * M_PI * frequency_to_send / 1000000 * (float)(micros() % (1000000 / frequency_to_send))));
         } else { // finished beep
             listener->begin(micros() + config->period - MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD);
-            curr_depth = (float)get_depth_mm_50ms() / 1000.0;
+            if (config->use_pressure_sensor){
+                curr_depth = (float)get_depth_mm_50ms() / 1000.0;
+            }
             is_currently_receiving = true; // switch to receiving
             switch_relay_to_receive_6ms();
             listener->start_adc_timer();
@@ -240,6 +242,19 @@ bool RovMain::loop(){
 
             } else if (token.startsWith("C")) { // input of node coordinates
                 calibration.manual_calibration_coords(token);
+            }
+
+            else if (token.startsWith("_d")){  // get depth
+                if (config->use_pressure_sensor){
+                    curr_depth = (float)get_depth_mm_50ms() / 1000.0;
+                }
+                client->print("Curr depth: " + String(curr_depth, 3) + "m\n");
+            }
+
+            else if (token.startsWith("USE_PRESSURE")) { // enable / disable pressure sensor
+                uint8_t use_sensor = (uint8_t)token.substring(12).toInt();
+                config->use_pressure_sensor = use_sensor > 0;
+                client->print("Use pressure sensor set to " + String(config->use_pressure_sensor) + "\n");
             }
         }
     }

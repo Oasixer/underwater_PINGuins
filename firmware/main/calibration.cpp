@@ -319,7 +319,9 @@ void Calibration::set_manual_depths(const String depths_str){
 }
 
 void Calibration::update_rov_depth_50ms(){
-    depths[0] = (float)get_depth_mm_50ms() / 1000.0;
+    if (config->use_pressure_sensor){
+        depths[0] = (float)get_depth_mm_50ms() / 1000.0;
+    }
 }
 
 

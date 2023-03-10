@@ -17,6 +17,7 @@ typedef struct{
     float marco_polo_time_delay;
     bool use_rising_edge;
     bool integrate_freq_domain;
+    bool use_pressure_sensor;
 } config_t;
 
 
