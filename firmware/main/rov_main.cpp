@@ -230,6 +230,7 @@ bool RovMain::loop(){
                 uint16_t n_cycles = (uint16_t)token.substring(1).toInt();
 
                 calibration_data = calibration.begin(n_cycles);
+                is_calibrating = true;
                 // setup_calibration();
 
             // } else if (token.startsWith("x")) { // calibrate n cycles

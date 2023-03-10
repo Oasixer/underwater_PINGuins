@@ -40,7 +40,7 @@ calibration_data_t* Calibration::begin(uint16_t _n_cycles_cmd){
     // calibrating node 1, will be updated to 3 then 5 before advancing to next cycle
     calibrating_node_135 = 1; 
     // state management. 0= start, 1= send, 2= listen first reply, 3= listen second reply
-    threeway_state = 0;
+    threeway_state = THREEWAY_STATE_INIT;
     cal_data.cycle_count = 0;
         
     ts_delay_threeway_until = micros();
