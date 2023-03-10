@@ -290,6 +290,29 @@ void Calibration::resolve_cycle_dists(){
     cycle_result->dists[1] = {{dist_0_1, 0.,       dist_1_2, dist_1_3}};
     cycle_result->dists[2] = {{dist_0_2, dist_1_2, 0.,       dist_2_3}};
     cycle_result->dists[3] = {{dist_0_3, dist_1_3, dist_2_3, 0.0}};
+
+    print_cycle(cycle_result);
+}
+
+void Calibration::print_cycle(cycle_result_t* cycle_result){
+    String msg = "dists 0_1 0_2 0_3";
+    distances_t* dists = cycle_result->dists;
+    msg += String(" ") + String(dists[0].dist[1]) + String(" ") + String(dists[0].dist[2]) + String(" ") + String(dists[0].dist[3]) + "\n";
+    msg += "\ndists l_2 2_3 1_3";
+    msg += String(" ") + String(dists[1].dist[2]) + String(" ") + String(dists[2].dist[3]) + String(" ") + String(dists[1].dist[3]);
+
+    threeway_result_t* measured_times = cycle_result->node_results;
+    float tt_0_1 = measured_times[0].first_response;
+    float tt_0_2 = measured_times[1].first_response;
+    float tt_0_3 = measured_times[2].first_response;
+
+    float tt_1_2 = measured_times[0].second_response;
+    float tt_2_3 = measured_times[1].second_response;
+    float tt_1_3 = measured_times[2].second_response;
+    msg += "\ndtt 0_1 0_2 0_3";
+    msg += String(" ") + String(tt_0_1) + String(" ") + String(tt_0_2) + String(" ") + String(tt_0_3) + "\n";
+    msg += "\ntt l_2 2_3 1_3";
+    msg += String(" ") + String(tt_1_2) + String(" ") + String(tt_2_3) + String(" ") + String(tt_1_3) + "\n";
 }
 
 

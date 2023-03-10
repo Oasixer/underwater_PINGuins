@@ -87,6 +87,7 @@ class Calibration {
         // void convert_trip_times_to_dists();
         void average_dists_and_get_coords();
         void update_rov_depth_50ms();
+        void print_cycle(cycle_result_t* cycle_result);
 };
 
 #endif
