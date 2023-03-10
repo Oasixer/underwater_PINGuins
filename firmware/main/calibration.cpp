@@ -327,14 +327,14 @@ void Calibration::update_rov_depth_50ms(){
 
 // !!!! We can bring this back if we need it...
 void Calibration::manual_calibration_coords(const String token){
-    int pos2 = 1;
+    int pos = 1;
     for (uint8_t i = 0; i < N_ALL_NODES; ++i){
-        int next_pos2 = token.indexOf(';', pos2);
-        if (next_pos2 == -1) {
-            next_pos2 = token.length();
+        int next_pos = token.indexOf(';', pos);
+        if (next_pos == -1) {
+            next_pos = token.length();
         }
-        cal_data.node_coords_3d[i] = get_coord_from_string(token.substring(pos2, next_pos2));
-        pos2 = next_pos2 + 1;
+        cal_data.node_coords_3d[i] = get_coord_from_string(token.substring(pos, next_pos));
+        pos = next_pos + 1;
     }
     // og_depth = (float)get_depth_mm() / 1000.0;
 
@@ -344,5 +344,6 @@ void Calibration::manual_calibration_coords(const String token){
                             String(cal_data.node_coords_3d[i].y, 2) + ", " + 
                             String(cal_data.node_coords_3d[i].z, 2) + "]";
     }
+    client->print(new_coord_string + "]\n");
     is_calibrated = true;
 }
