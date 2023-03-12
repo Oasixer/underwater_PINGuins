@@ -53,6 +53,8 @@ class Calibration {
         calibration_data_t* begin(uint16_t _n_cycles_cmd);
         float trip_time_to_dist(uint64_t trip_time);
         void set_manual_depths(const String depths_str);
+        calibration_data_t cal_data;
+
     private:
         TcpClient* client;
         Listener* listener;
@@ -68,7 +70,6 @@ class Calibration {
         // cycle_result_t cycle_results[MAX_CALIBRATION_CYCLES];
         // uint16_t cycle_count;
         uint16_t n_cycles_cmd;
-        calibration_data_t cal_data;
         bool check_timeout_and_freq(listener_output_t* result, uint8_t node_id_to_listen_for);
         bool handle_result_and_return_should_increment_node(listener_output_t* result, uint8_t node_id_to_listen_for);
         bool increment_node_and_return_should_increment_cycle();

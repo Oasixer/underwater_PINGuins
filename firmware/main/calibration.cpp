@@ -2,6 +2,7 @@
 #include "calibration.h"
 #include "positions.h"
 #include "dac_driver.h"
+#include "printing.h"
 #include "relay.h"
 #include "utils.h"
 #include "MS5839.h"
@@ -131,6 +132,20 @@ bool Calibration::calibration_in_progress_tick(){
         if (listen_return_is_calibration_done()){
             is_calibrated = true;
             average_dists_and_get_coords();
+            String new_coord_string = "Average distances: [0_1, 0_2, 0_3, 1_2, 1_3, 2_3]: [" + 
+                String(cal_data.averaged_distances[0].dist[1], 2) + ", " + 
+                String(cal_data.averaged_distances[0].dist[2], 2) + ", " + 
+                String(cal_data.averaged_distances[0].dist[3], 2) + ", " + 
+                String(cal_data.averaged_distances[1].dist[2], 2) + ", " + 
+                String(cal_data.averaged_distances[1].dist[3], 2) + ", " + 
+                String(cal_data.averaged_distances[2].dist[3], 2) + "]\n"; 
+            new_coord_string += "Calibrated (averaged) coordinates: [";
+                for (uint8_t i = 0; i < N_ALL_NODES; ++i){
+                    new_coord_string += "[" + String(cal_data.node_coords_3d[i].x, 2) + ", " + 
+                                String(cal_data.node_coords_3d[i].y, 2) + ", " + 
+                                String(cal_data.node_coords_3d[i].z, 2) + "]";
+                }
+                client->print(new_coord_string + "]\n");
             return true; // return true = done calibration
         }
     }
@@ -146,6 +161,8 @@ bool Calibration::listen_return_is_calibration_done(){
 
     bool should_increment_node = handle_result_and_return_should_increment_node(&result, node_id_to_listen_for);
     if (should_increment_node){
+        // String msg = "listen_0_1 from increment_node "+ uint64ToString(cal_data.cycle_results[cal_data.cycle_count].node_results[0].first_response) + "\n";
+        // client->print(msg);
 
         bool should_increment_cycle = increment_node_and_return_should_increment_cycle();
         if (should_increment_cycle){
@@ -174,6 +191,7 @@ bool Calibration::increment_node_and_return_should_increment_cycle(){ // return 
     if (calibrating_node_135 == 5){
         // cal_data.cycle_count += 1;
         calibrating_node_135 = 1;
+        // client->print('INCR CYCLE\n');
         return true;
     }
     calibrating_node_135 += 2;
@@ -207,6 +225,8 @@ bool Calibration::handle_result_and_return_should_increment_node(listener_output
         ts_listen_timeout = ts_listen_start + listen_start_to_timeout_offset();
         listener->begin(ts_listen_start);
         threeway_state = THREEWAY_STATE_LISTEN_2;
+        // String msg = "listen_1: "+ uint64ToString(elapsed_since_threeway_start) + "\n";
+        // client->print(msg);
         return false; // dont increment node
     }
     else if (threeway_state == THREEWAY_STATE_LISTEN_2){
@@ -217,6 +237,8 @@ bool Calibration::handle_result_and_return_should_increment_node(listener_output
         listener->end_adc_timer();
         switch_relay_to_send_5ms();
         ts_delay_threeway_until = result->ts_peak + listen_to_yell_offset();
+        // String msg = "listen_2: "+ uint64ToString(elapsed_since_threeway_start) + "\n";
+        // client->print(msg);
         return true; // ready to increment to the next node (next threeway)
     }
     else {
@@ -233,6 +255,9 @@ bool Calibration::check_timeout_and_freq(listener_output_t* result, uint8_t node
             // TODO: printing uint64s sucks listen_start_to_timeout_offset is a uint64
             sprintf(msg, "ERROR: timeout after %umicros listening for id %u\n",listen_start_to_timeout_offset(), node_id_to_listen_for);
             client->print(String(msg));
+            client->print("calibr node: ");
+            client->print(String(calibrating_node_135));
+            client->print("\n");
             return false;
         }
         return true; // if not finished and not timed out, all ok
@@ -241,6 +266,10 @@ bool Calibration::check_timeout_and_freq(listener_output_t* result, uint8_t node
         char msg[80];
         sprintf(msg, "ERROR: expected to hear id %u, but heard id %u\n", node_id_to_listen_for, result->idx_identified_freq);
         client->print(String(msg));
+        client->print("calibr node: ");
+        client->print(String(calibrating_node_135));
+        client->print("\n");
+
         return false;
     }
     return true; // all ok
@@ -282,9 +311,9 @@ void Calibration::resolve_cycle_dists(){
     float dist_0_2 = trip_time_to_dist(measured_times[1].first_response);
     float dist_0_3 = trip_time_to_dist(measured_times[2].first_response);
 
-    float dist_1_2 = trip_time_to_dist(measured_times[0].second_response) * 2. + dist_0_1 - dist_0_2;
-    float dist_2_3 = trip_time_to_dist(measured_times[1].second_response) * 2. + dist_0_2 - dist_0_3;
-    float dist_1_3 = trip_time_to_dist(measured_times[2].second_response) * 2. + dist_0_3 - dist_0_1;
+    float dist_1_2 = trip_time_to_dist(measured_times[0].second_response-measured_times[0].first_response) * 2. + dist_0_1 - dist_0_2;
+    float dist_2_3 = trip_time_to_dist(measured_times[1].second_response-measured_times[1].first_response) * 2. + dist_0_2 - dist_0_3;
+    float dist_1_3 = trip_time_to_dist(measured_times[2].second_response-measured_times[2].first_response) * 2. + dist_0_3 - dist_0_1;
 
     cycle_result->dists[0] = {{0.,       dist_0_1, dist_0_2, dist_0_3}};
     cycle_result->dists[1] = {{dist_0_1, 0.,       dist_1_2, dist_1_3}};
@@ -295,24 +324,24 @@ void Calibration::resolve_cycle_dists(){
 }
 
 void Calibration::print_cycle(cycle_result_t* cycle_result){
-    String msg = "dists 0_1 0_2 0_3";
+    String msg = "\ndists [0_1, 0_2, 0_3, 1_2, 1_3, 2_3]: ";
     distances_t* dists = cycle_result->dists;
-    msg += String(" ") + String(dists[0].dist[1]) + String(" ") + String(dists[0].dist[2]) + String(" ") + String(dists[0].dist[3]) + "\n";
-    msg += "\ndists l_2 2_3 1_3";
-    msg += String(" ") + String(dists[1].dist[2]) + String(" ") + String(dists[2].dist[3]) + String(" ") + String(dists[1].dist[3]);
+    msg += String("[") + String(dists[0].dist[1], 2) + String(", ") + String(dists[0].dist[2], 2) + String(", ") + String(dists[0].dist[3], 2) + ", ";
+    msg += String(dists[1].dist[2], 2) + String(", ") + String(dists[1].dist[3], 2) + String(", ") + String(dists[2].dist[3], 2) + "]\n";
 
-    threeway_result_t* measured_times = cycle_result->node_results;
-    float tt_0_1 = measured_times[0].first_response;
-    float tt_0_2 = measured_times[1].first_response;
-    float tt_0_3 = measured_times[2].first_response;
+    // threeway_result_t* measured_times = cycle_result->node_results;
+    // float tt_0_1 = measured_times[0].first_response;
+    // float tt_0_2 = measured_times[1].first_response;
+    // float tt_0_3 = measured_times[2].first_response;
 
-    float tt_1_2 = measured_times[0].second_response;
-    float tt_2_3 = measured_times[1].second_response;
-    float tt_1_3 = measured_times[2].second_response;
-    msg += "\ndtt 0_1 0_2 0_3";
-    msg += String(" ") + String(tt_0_1) + String(" ") + String(tt_0_2) + String(" ") + String(tt_0_3) + "\n";
-    msg += "\ntt l_2 2_3 1_3";
-    msg += String(" ") + String(tt_1_2) + String(" ") + String(tt_2_3) + String(" ") + String(tt_1_3) + "\n";
+    // float tt_1_2 = measured_times[0].second_response;
+    // float tt_2_3 = measured_times[1].second_response;
+    // float tt_1_3 = measured_times[2].second_response;
+    // msg += "tt 0_1 0_2 0_3";
+    // msg += String(" ") + String(tt_0_1) + String(" ") + String(tt_0_2) + String(" ") + String(tt_0_3) + "\n";
+    // msg += "tt 1_2 2_3 1_3";
+    // msg += String(" ") + String(tt_1_2) + String(" ") + String(tt_2_3) + String(" ") + String(tt_1_3) + "\n";
+    client->print(msg);
 }
 
 

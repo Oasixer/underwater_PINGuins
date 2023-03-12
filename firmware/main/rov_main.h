@@ -47,6 +47,7 @@ class RovMain {
 
         uint64_t trip_times_round_robin[3] = {{0}};
         uint64_t trip_times_single_freq[MAX_N_TRIPS] = {{0}};
+        float max_magnitudes_single_freq[MAX_N_TRIPS] = {0};
         void round_robin_receive_mode_hb(listener_output_t&);
         void receive_mode_hb_single_freq(listener_output_t &listener_data);
         void send_mode_hb();

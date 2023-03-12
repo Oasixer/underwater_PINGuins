@@ -15,6 +15,7 @@ typedef struct{
     uint32_t period;
     float speed_of_sound;
     float marco_polo_time_delay;
+    float max_amplitude_factor;
     bool use_rising_edge;
     bool integrate_freq_domain;
     bool use_pressure_sensor;

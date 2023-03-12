@@ -25,10 +25,10 @@ uint16_t get_freq(uint8_t idx_freq){
 
 uint8_t freq_idx_to_node_n(uint8_t freq_idx){
     if (freq_idx == 1){
-        return 1;
+        return 0;
     }
     if (freq_idx == 3){
-        return 2;
+        return 1;
     }
-    return 3;
+    return 2;
 }

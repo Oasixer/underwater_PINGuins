@@ -9,7 +9,7 @@
 #include "tcp_client.h"
 // #include "fourier.h"
 
-#define USE_ETHERNET false
+#define USE_ETHERNET true
 #define use_both_servers true // ahmad you should change this
 TcpClient client = TcpClient(use_both_servers, USE_ETHERNET);
 
@@ -22,6 +22,7 @@ config_t config = {
     200000,  // period
     1351.89889440064462178270, // speed_of_sound
     200056.07745910956873558462, // marco_polo_time_delay
+    1,  // max_amplitude_factor
     true, // use_rising_edge
     false, // integrate_freq_domain
     false, // use_pressure_sensor

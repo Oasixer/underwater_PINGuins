@@ -8,6 +8,7 @@ typedef struct {
     bool finished;
     uint64_t ts_peak;
     uint8_t idx_identified_freq;
+    float max_magnitude;
 } listener_output_t;
 
 class Listener{
