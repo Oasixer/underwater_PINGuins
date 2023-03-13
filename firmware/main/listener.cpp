@@ -70,10 +70,11 @@ listener_output_t Listener::hb(){//uint8_t only_listen_to){
                             idx_identified_freq = i;
                         }
                     }
+                    curr_max_magnitude = largest_sum;
                 }
-                return {true, ts_peak, idx_identified_freq};
+                return {true, ts_peak, idx_identified_freq, curr_max_magnitude};
             }
         }
     }
-    return {false, 0, 0};
+    return {false, 0, 0, 0.0};
 }

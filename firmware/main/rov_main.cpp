@@ -49,6 +49,7 @@ void RovMain::setup(){
     client->print("Initialized pressure sensor\n");
 
     is_calibrating = false;
+    calibration_data = &calibration.cal_data;
 
     delay(50);
 }
@@ -58,7 +59,8 @@ void RovMain::shutdown(){
 }
 
 void RovMain::check_if_done_round_robins(){
-    if (n_round_robins_done >= n_round_robins_command){ // done round robins
+    client->print("n round robins done: " + String(n_round_robins_done) + "\n");
+    if (n_round_robins_command != (uint16_t)-1 && n_round_robins_done >= n_round_robins_command){ // done round robins
         is_currently_receiving = false;
         curr_freq_idx = 0;
         frequency_to_send = FREQUENCIES[curr_freq_idx];
@@ -92,7 +94,7 @@ void RovMain::reset_send_receive(){
 void RovMain::send_mode_hb(){
     if (micros() >= ts_start_talking){ // send data
         if (micros() - ts_start_talking < config->micros_send_duration){ // keep sending
-            dac_set_analog_float(sinf(2 * M_PI * frequency_to_send / 1000000 * (float)(micros() % (1000000 / frequency_to_send))));
+            dac_set_analog_float(config->max_amplitude_factor * sinf(2 * M_PI * frequency_to_send / 1000000 * (float)(micros() % (1000000 / frequency_to_send))));
         } else { // finished beep
             listener->begin(micros() + config->period - MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD);
             if (config->use_pressure_sensor){
@@ -169,7 +171,7 @@ bool RovMain::loop(){
 
             } else if (token.startsWith("R")) { // find position
                 if (!calibration.is_calibrated){
-                    client->print("Must calibrate (auto or manual) first!");
+                    client->print("Must calibrate (auto or manual) first!\n");
                     continue;
                 }
                 n_round_robins_command = (uint16_t)token.substring(1).toInt();
@@ -228,6 +230,10 @@ bool RovMain::loop(){
                 // set node depths to comma seperated String
                 calibration.set_manual_depths(token.substring(1));
 
+            } else if (token.startsWith("m")) {  // change max amplitude
+                config->max_amplitude_factor = atof(token.substring(1).c_str());
+                client->print("Changed max amplitude factor to " + String(config->max_amplitude_factor, 3) + "\n");
+
             } else if (token.startsWith("c")) { // calibrate n cycles
                 uint16_t n_cycles = (uint16_t)token.substring(1).toInt();
 
@@ -242,12 +248,25 @@ bool RovMain::loop(){
 
             } else if (token.startsWith("C")) { // input of node coordinates
                 calibration.manual_calibration_coords(token);
+                String new_coord_string = "Updated coordinates: [";
+                for (uint8_t i = 0; i < N_ALL_NODES; ++i){
+                new_coord_string += "[" + String(calibration_data->node_coords_3d[i].x, 2) + ", " + 
+                            String(calibration_data->node_coords_3d[i].y, 2) + ", " + 
+                            String(calibration_data->node_coords_3d[i].z, 2) + "]";
+                }
+                client->print(new_coord_string + "]\n");
             }
 
             else if (token.startsWith("_d")){  // get depth
                 if (config->use_pressure_sensor){
                     curr_depth = (float)get_depth_mm_50ms() / 1000.0;
                 }
+                client->print("Curr depth: " + String(curr_depth, 3) + "m\n");
+            }
+
+            else if (token.startsWith("_D")){  // set depth
+                config->use_pressure_sensor = false;
+                curr_depth = atof(token.substring(2).c_str());
                 client->print("Curr depth: " + String(curr_depth, 3) + "m\n");
             }
 
@@ -268,7 +287,7 @@ bool RovMain::loop(){
 
     if (is_transmit_continuously) {    // if the command is to transmit continuously
         if (micros() < ts_stop_continuous_transmission) { // should still transmit
-            dac_set_analog_float(sinf(2 * M_PI * frequency_to_send / 1000000 * (float)(micros() % (1000000 / frequency_to_send))));
+            dac_set_analog_float(config->max_amplitude_factor * sinf(2 * M_PI * frequency_to_send / 1000000 * (float)(micros() % (1000000 / frequency_to_send))));
         } else { // stop transmitting
             client->print("Finished continuous transmission\n");
             is_transmit_continuously = false;
@@ -311,6 +330,7 @@ void RovMain::receive_mode_hb_single_freq(listener_output_t &listener_data){
         listener->end_adc_timer();
         uint64_t trip_time = ts_peak - ts_start_talking;
         trip_times_single_freq[n_talks_done] = trip_time;
+        max_magnitudes_single_freq[n_talks_done] = listener_data.max_magnitude;
         float dist_estimate = calibration.trip_time_to_dist(trip_time);
         client->print("Trip time: " + uint64ToString(trip_time) + "us. Measured Distance: " + 
                      String(dist_estimate, 3) + "m\n");
@@ -324,10 +344,10 @@ void RovMain::receive_mode_hb_single_freq(listener_output_t &listener_data){
 
         ++n_talks_done;
         if (n_talks_done >= n_talks_command){  // did all the commanded send receives
-            client->print("Finished send receives " + String(n_talks_done) + " times. Measured distances (m) are:\n");
+            client->print("###Finished send receives " + String(n_talks_done) + " times. Measured distances (m) are:\n");
             String msg = "[";
             for (uint16_t i = 0; i < n_talks_done; ++i){
-                msg += String(calibration.trip_time_to_dist(trip_times_single_freq[i]), 3); 
+                msg += String(calibration.trip_time_to_dist(trip_times_single_freq[i]), 2); 
                 msg += "; ";
                 if (i % 10 == 9){
                     client->print(msg + "\n");
@@ -338,6 +358,16 @@ void RovMain::receive_mode_hb_single_freq(listener_output_t &listener_data){
             msg = "[";
             for (uint16_t i = 0; i < n_talks_done; ++i){
                 msg += uint64ToString(trip_times_single_freq[i]); 
+                msg += "; ";
+                if (i % 10 == 9){
+                    client->print(msg + "\n");
+                    msg = "";
+                }
+            }
+            client->print(msg + "]\n max Magnitudes are: \n");
+            msg = "[";
+            for (uint16_t i = 0; i < n_talks_done; ++i){
+                msg += String(max_magnitudes_single_freq[i], 0); 
                 msg += "; ";
                 if (i % 10 == 9){
                     client->print(msg + "\n");
@@ -374,6 +404,13 @@ void RovMain::round_robin_receive_mode_hb(listener_output_t &listener_data){
                     calibration.trip_time_to_dist(trip_times_round_robin[1]), // dist to node 2
                     calibration.trip_time_to_dist(trip_times_round_robin[2]), // dist to node 3
                 };
+                // client->print("Distances: [0.0, " + String(dists_3d[1], 2) + ", " + 
+                //     String(dists_3d[2], 2) + ", " + String(dists_3d[3], 2) + "]\n");
+                // client->print("Nodes: [\n[" 
+                // + String(calibration_data->node_coords_3d[0].x, 2) + ", " + String(calibration_data->node_coords_3d[0].y, 2) + ", " + String(calibration_data->node_coords_3d[0].z, 2) + "]\n["  
+                // + String(calibration_data->node_coords_3d[1].x, 2) + ", " + String(calibration_data->node_coords_3d[1].y, 2) + ", " + String(calibration_data->node_coords_3d[1].z, 2) + "]\n[" 
+                // + String(calibration_data->node_coords_3d[2].x, 2) + ", " + String(calibration_data->node_coords_3d[2].y, 2) + ", " + String(calibration_data->node_coords_3d[2].z, 2) + "]\n[" 
+                // + String(calibration_data->node_coords_3d[3].x, 2) + ", " + String(calibration_data->node_coords_3d[3].y, 2) + ", " + String(calibration_data->node_coords_3d[3].z, 2) + "]]\n"); 
                 coord_3d_t position_estimate = multilaterate(calibration_data->node_coords_3d, dists_3d, curr_depth);
                 client->print("Distances: [0.0, " + String(dists_3d[1], 2) + ", " + 
                     String(dists_3d[2], 2) + ", " + String(dists_3d[3], 2) + "], Depth: " + 

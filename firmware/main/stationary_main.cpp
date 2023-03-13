@@ -57,7 +57,7 @@ void StationaryMain::send_mode_hb(){
 
 void StationaryMain::reply_yell(){
     if (micros() - ts_start_talking < config->micros_send_duration){ // keep sending
-        dac_set_analog_float(sinf(2 * M_PI * freq_to_send / 1000000 * (float)(micros() % (1000000 / freq_to_send))));
+        dac_set_analog_float(config->max_amplitude_factor * sinf(2 * M_PI * freq_to_send / 1000000 * (float)(micros() % (1000000 / freq_to_send))));
     } else { // finished beep
         ts_start_listening = micros() + config->period - MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD;
         listener->begin(ts_start_listening);
@@ -154,6 +154,10 @@ bool StationaryMain::loop(){
                     config->duration_to_find_peak = (uint16_t)token.substring(1).toInt();
                     client->print("Changed duration to find peak to " + String(config->duration_to_find_peak) + "us\n");
 
+                } else if (token.startsWith("m")) {  // change max amplitude
+                    config->max_amplitude_factor = atof(token.substring(1).c_str());
+                    client->print("Changed max amplitude factor to " + String(config->max_amplitude_factor, 3) + "\n");
+
                 }
             }
         }
@@ -165,6 +169,8 @@ bool StationaryMain::loop(){
                     if (listener_data.idx_identified_freq == (my_stationary_idx - 1) * 2){
                         // respond with same frequency received
                         freq_to_send = get_freq(listener_data.idx_identified_freq);
+                        client->print("I heard my own frequency (" + String(listener_data.idx_identified_freq) 
+                            + ": " + String(freq_to_send) + "Hz) , responding with my own frequency\n");
                         is_currently_receiving = false;
                         ts_start_talking = listener_data.ts_peak + config->period;
                         adc_timer.end();
@@ -173,6 +179,9 @@ bool StationaryMain::loop(){
                     else if (listener_data.idx_identified_freq == my_stationary_idx * 2 - 1) {
                         // respond with frequency received + 1 % 6
                         freq_to_send = get_freq((listener_data.idx_identified_freq + 1) % N_FREQUENCIES);
+                        client->print("I heard (" + String(listener_data.idx_identified_freq) + ": " + 
+                            String(get_freq(listener_data.idx_identified_freq)) +"Hz) I've been told to trigger the next node (" + String((listener_data.idx_identified_freq + 1) % N_FREQUENCIES) 
+                            + ": " + String(freq_to_send) + "Hz)\n");
                         is_currently_receiving = false;
                         ts_start_talking = listener_data.ts_peak + config->period;
                         listener->end_adc_timer();
