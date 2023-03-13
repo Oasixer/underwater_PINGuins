@@ -1,5 +1,6 @@
 <script>
   import Home from '../components/Home.svelte';
+
 </script>
 <style>
   :global(body){

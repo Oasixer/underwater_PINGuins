@@ -8,7 +8,7 @@ use std::fs::File;
 use tokio::task;
 
 // use rocket::serde::Serialize;
-use serde::Serialize;
+// use serde::Serialize;
 use std::time::Instant;
 
 
@@ -17,9 +17,8 @@ mod msound_player;
 mod stdin_listener;
 mod file_writer;
 mod consume_data;
-mod web_server;
+// mod web_server;
 
-use web_server::rocket;
 use msound_player::SoundPlayer;
 use msound_player::SoundEffect;
 use crate::config::Config;
@@ -86,12 +85,12 @@ pub struct Maurice{
     // coords: Coord3D,
     // updated: std::time::Instant,
 // }
-#[derive(Debug, PartialEq, Serialize)]
-struct Coord3D {
-    x: f32,
-    y: f32,
-    z: f32,
-}
+// #[derive(Debug, PartialEq, Serialize)]
+// struct Coord3D {
+//     x: f32,
+//     y: f32,
+//     z: f32,
+// }
 
 #[derive(Clone)]
 pub struct AdcRecMetadata{

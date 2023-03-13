@@ -8,7 +8,7 @@ use super::{
     ClientSocketWrapper,
     AdcMsgToWrite,
     // DisplayData,
-    Coord3D,
+    // Coord3D,
     MSG_SIZE_BYTES,
     msound_player::{ SoundEffect, },
 };
@@ -96,16 +96,16 @@ impl Maurice {
                         client_socket_wrapper.fprint(&format!("<{}", &msg_str));
 
                         if msg_str.starts_with("Distances:"){
-                            match parse_estimate(&msg_str) {
-                                Ok(position) => {
-                                    // Do something with the parsed position...
-                                    // self.sound_player.play_sound_effect(SoundEffect::
-                                    println!("Parsed position: ({}, {}, {})", position.x, position.y, position.z);
-                                },
-                                Err(err) => {
-                                    eprintln!("Error parsing estimate: {}", err);
-                                },
-                            }
+                            // match parse_estimate(&msg_str) {
+                            //     Ok(position) => {
+                            //         // Do something with the parsed position...
+                            //         // self.sound_player.play_sound_effect(SoundEffect::
+                            //         println!("Parsed position: ({}, {}, {})", position.x, position.y, position.z);
+                            //     },
+                            //     Err(err) => {
+                            //         eprintln!("Error parsing estimate: {}", err);
+                            //     },
+                            // }
                         }
                         else if msg_str.starts_with("HB["){
                             client_socket_wrapper.last_hb_received = Instant::now();
@@ -127,20 +127,20 @@ impl Maurice {
     }
 } 
 
-fn parse_estimate(info: &str) -> Result<Coord3D, String> {
-    if let Some(start_idx) = info.find("Estimate: [") {
-        let end_idx = info[start_idx..].find(']').map(|idx| start_idx + idx)
-            .ok_or_else(|| "Failed to find end of Estimate field".to_string())?;
-        let coords = info[start_idx + 12..end_idx].split(", ").collect::<Vec<&str>>();
-        if coords.len() == 3 {
-            let x = coords[0].parse().map_err(|e| format!("Failed to parse x value: {}", e))?;
-            let y = coords[1].parse().map_err(|e| format!("Failed to parse y value: {}", e))?;
-            let z = coords[2].parse().map_err(|e| format!("Failed to parse z value: {}", e))?;
-            Ok(Coord3D { x, y, z })
-        } else {
-            Err("Invalid number of coordinates in Estimate field".to_string())
-        }
-    } else {
-        Err("Failed to find Estimate field".to_string())
-    }
-}
+// fn parse_estimate(info: &str) -> Result<Coord3D, String> {
+//     if let Some(start_idx) = info.find("Estimate: [") {
+//         let end_idx = info[start_idx..].find(']').map(|idx| start_idx + idx)
+//             .ok_or_else(|| "Failed to find end of Estimate field".to_string())?;
+//         let coords = info[start_idx + 12..end_idx].split(", ").collect::<Vec<&str>>();
+//         if coords.len() == 3 {
+//             let x = coords[0].parse().map_err(|e| format!("Failed to parse x value: {}", e))?;
+//             let y = coords[1].parse().map_err(|e| format!("Failed to parse y value: {}", e))?;
+//             let z = coords[2].parse().map_err(|e| format!("Failed to parse z value: {}", e))?;
+//             Ok(Coord3D { x, y, z })
+//         } else {
+//             Err("Invalid number of coordinates in Estimate field".to_string())
+//         }
+//     } else {
+//         Err("Failed to find Estimate field".to_string())
+//     }
+// }
