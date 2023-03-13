@@ -1,5 +1,5 @@
 <script>
-  import Home from '../components/Home.svelte';
+  import Dashboard from '../components/Dashboard.svelte';
 
 </script>
 <style>
@@ -19,5 +19,5 @@
   }
 </style>
 <title>Pinguins</title>
-<Home/>
+<Dashboard/>
 

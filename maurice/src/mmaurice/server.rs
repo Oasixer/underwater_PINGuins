@@ -86,16 +86,17 @@ impl Maurice {
             };
 
             let mac: [u8;6] = self.config.get_mac_from_ip(ip_bytes).expect("failed to get mac from ip");
+            let name: String = self.config.get_desig_from_ip(ip_bytes).expect("failed to get mac from ip");
 
             // get mac last byte as string using from_utf8:
             // let last_mac_byte_vec = vec![mac[5]];
             // let mac_last_byte = String::from_utf8(last_mac_byte_vec).expect("failed to convert mac last byte to string");
 
             if self.get_client_socket(mac).is_ok() {
-                println!("\n=============== PINGUIN {:02x} RE-CONNECTED ON {} ================", mac[5], addr);
+                println!("\n=============== PINGUIN {} @{:02x} RE-CONNECTED ON {} ================", name, mac[5], addr);
             }
             else{
-                println!("\n=============== PINGUIN {:02x} CONNECTED ON {} ================", mac[5], addr);
+                println!("\n=============== PINGUIN {} @{:02x} CONNECTED ON {} ================", name, mac[5], addr);
             }
             Self::print_commands_info();
             socket.set_read_timeout(Some(Duration::from_millis(self.config.timeout_read_ms))).expect("Failed to set read timeout.");
@@ -214,28 +215,29 @@ impl Maurice {
         }
         if let Ok(connection_change) = self.rx_connection_change.try_recv() {
             // println!("got a connection change to connected={} from the consumer thread: {}", connection_change.is_connected, connection_change.mac[5]);
-            if connection_change.is_connected {
-                self.sound_player.play_sound_effect(SoundEffect::Connect);
-                match self.get_client_socket(connection_change.mac){
-                    Ok(client_socket_wrapper) => {
+            let mac: [u8; 6] = connection_change.mac.clone();
+            match self.get_client_socket(connection_change.mac){
+                Ok(client_socket_wrapper) => {
+                    let sound_effect: SoundEffect;
+                    if connection_change.is_connected {
+                        sound_effect = SoundEffect::Connect;
+                        // self.sound_player.play_sound_effect(SoundEffect::Connect);
                         client_socket_wrapper.fprint_create_file("Connected!\n");
                     }
-                    Err(_) => {
-                        panic!("client socket wrapper not found");
-                    }
-                }
-            }
-            else {
-                self.sound_player.play_sound_effect(SoundEffect::Disconnect);
-                match self.get_client_socket(connection_change.mac){
-                    Ok(client_socket_wrapper) => {
+                    else{
+                        sound_effect = SoundEffect::Disconnect;
+                        // self.sound_player.play_sound_effect(SoundEffect::Disconnect);
                         client_socket_wrapper.fprint_create_file("Disconnected!\n");
                     }
-                    Err(_) => {
-                        panic!("client socket wrapper not found");
-                    }
+                    self.sound_player.play_sound_effect(sound_effect);
+                }
+                Err(_) => {
+                    panic!("client socket wrapper not found");
                 }
             }
+            let mut data = self.data_provided_to_frontend.lock().unwrap();
+            let node = data.nodes.iter_mut().find(|node| node.mac == mac).ok_or_else(|| format!("Could not find client socket with mac: {:?}", mac));
+            node.unwrap().is_connected = connection_change.is_connected;
         }
     }
 }

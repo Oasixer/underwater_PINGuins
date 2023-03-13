@@ -2,6 +2,7 @@ use std::fs::File;
 use std::io::Read;
 use std::fs;
 use std::path::Path;
+use serde::Serialize;
 
 
 const TIMEOUT_READ_MS: u64 = 1000;
@@ -13,21 +14,98 @@ pub const DATA_STREAM_DIR: &str = "../data_stream";
 pub const ADC_DATA_DIR: &str = "adc_data";
 pub const CLI_DATA_DIR: &str = "cli_data";
 const PORT: u32 = 6969;
+pub const HIDE_HB : bool = false;
 
 const KNOWN_TEENSY_METADATA_COUNT: usize = 4;
+
+#[derive(Debug, PartialEq, Serialize, Clone)]
+pub struct Coord3D {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+#[derive(Serialize, Clone)]
+pub struct Node {
+    name: String,
+    desc: String,
+    idx: u8,
+    pub mac: [u8; 6],
+    mac_str: String,
+    pub is_connected: bool,
+    pub coords: Coord3D,
+}
+
 const TEENSY_MACS: [[u8; 6]; KNOWN_TEENSY_METADATA_COUNT] = [
     [0x04, 0xe9, 0xe5, 0x14, 0x0f, 0x14],
-    [0x04, 0xe9, 0xe5, 0x14, 0x3f, 0x1e],
-    [0x04, 0xe9, 0xe5, 0x14, 0x3f, 0x41],
     [0x04, 0xe9, 0xe5, 0x14, 0x0e, 0xf1],
+    [0x04, 0xe9, 0xe5, 0x14, 0x3f, 0x41],
+    [0x04, 0xe9, 0xe5, 0x14, 0x3f, 0x1e],
 ];
 
-const TEENSY_IPS: [[u8; 4]; 4] = [
-    [192, 168, 1, 100], // 14
-    [192, 168, 1, 101],
-    [192, 168, 1, 102],
-    [192, 168, 1, 103],
+const TEENSY_IPS: [[u8; KNOWN_TEENSY_METADATA_COUNT]; KNOWN_TEENSY_METADATA_COUNT] = [
+    [192, 168, 1, 100], // 14, skip
+    [192, 168, 1, 103], // f1, rico
+    [192, 168, 1, 102], // 41, kwsk
+    [192, 168, 1, 101], // 1e, prvt
 ];
+pub fn config_const_nodes() -> [Node; 4]{
+    return [
+        Node{
+            name: "SKPR".to_string(),
+            desc: "Skipper: ROV".to_string(),
+            idx: 0,
+            mac: TEENSY_MACS[0],
+            mac_str: format!("{:02x}", TEENSY_MACS[0][5]),
+            is_connected: false,
+            coords: Coord3D{
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+            },
+        },
+        Node{
+            name: String::from("RICO"),
+            desc: String::from("Rico: Stationary 1"),
+            idx: 1,
+            mac: TEENSY_MACS[1],
+            mac_str: format!("{:02x}", TEENSY_MACS[1][5]),
+            is_connected: false,
+            coords: Coord3D{
+                x: 1.0,
+                y: 1.0,
+                z: 0.0,
+            },
+        },
+        Node{
+            name: String::from("KWSK"),
+            desc: String::from("Kowalski: Stationary 2"),
+            idx: 2,
+            mac: TEENSY_MACS[2],
+            mac_str: format!("{:02x}", TEENSY_MACS[2][5]),
+            is_connected: false,
+            coords: Coord3D{
+                x: 2.0,
+                y: 2.0,
+                z: 0.0,
+            },
+        },
+        Node{
+            name: String::from("PRVT"),
+            desc: String::from("Private: Stationary 3"),
+            idx: 3,
+            mac: TEENSY_MACS[3],
+            mac_str: format!("{:02x}", TEENSY_MACS[3][5]),
+            is_connected: false,
+            coords: Coord3D{
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+            },
+        },
+    ];
+}
+
+
 
 
 fn grab_ip_from_file() -> String {
@@ -72,6 +150,15 @@ impl Config {
         for i in 0..self.teensy_ips.len() {
             if self.teensy_ips[i] == ip {
                 return Ok(self.teensy_macs[i]);
+            }
+        }
+        return Err(UnknownIpAddrError{ip});
+    }
+    pub fn get_desig_from_ip(&self, ip: [u8; 4]) -> Result<String, UnknownIpAddrError> {
+        let nodes = config_const_nodes();
+        for i in 0..self.teensy_ips.len() {
+            if self.teensy_ips[i] == ip {
+                return Ok(nodes[i].name.clone());
             }
         }
         return Err(UnknownIpAddrError{ip});

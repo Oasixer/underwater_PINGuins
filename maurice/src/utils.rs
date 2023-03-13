@@ -2,6 +2,7 @@ use std::io;
 use std::fs;
 use std::path::Path;
 use std::thread;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 #[macro_export]
 macro_rules! impl_display_for_enum {
@@ -60,4 +61,14 @@ pub fn hex_string_to_u8(hex_str: &str) -> Result<u8, String> {
 
 pub fn thread_sleep(millis: u64) {
     thread::sleep(std::time::Duration::from_millis(millis));
+}
+
+
+pub fn get_posix_millis() -> u128 {
+    let start = SystemTime::now();
+    let since_the_epoch = start
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards");
+    let in_ms = since_the_epoch.as_millis();
+    in_ms
 }

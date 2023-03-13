@@ -1,14 +1,16 @@
 use std::net::{TcpListener, TcpStream};
 use std::sync::mpsc;
-use std::sync::Arc;
 use std::io::{BufWriter};
 use std::sync::mpsc::{channel, Sender, Receiver};
 use std::io::Write;
 use std::fs::File;
 use tokio::task;
+use std::sync::{Mutex, Arc};
+use std::time::{SystemTime, UNIX_EPOCH};
+
 
 // use rocket::serde::Serialize;
-// use serde::Serialize;
+use serde::Serialize;
 use std::time::Instant;
 
 
@@ -21,9 +23,14 @@ mod consume_data;
 
 use msound_player::SoundPlayer;
 use msound_player::SoundEffect;
-use crate::config::Config;
-use crate::config::OUTGOING_CMD_SIZE_BYTES;
-use crate::config::MSG_SIZE_BYTES;
+use crate::config::{
+    Config,
+    OUTGOING_CMD_SIZE_BYTES,
+    MSG_SIZE_BYTES,
+    Coord3D,
+    Node,
+    config_const_nodes,
+};
 use crate::utils::{create_parent_directories, thread_sleep};
 
 pub struct ConnectionChange{
@@ -67,6 +74,7 @@ pub struct Maurice{
     rx_connection_change: Receiver<ConnectionChange>,
     rx_stdin_listener: Receiver<String>,
     tx_adc_file_writer: Sender<AdcMsgToWrite>,
+    data_provided_to_frontend: NodeDataDisplayGuarded,
     // tx_display_data: Sender<DisplayData>,
     // rx_file_writer: Receiver<MsgToWrite>,
 }
@@ -80,17 +88,23 @@ pub struct Maurice{
 //     coords: &'r Coord3D,
 //     updated: &'r std::time::Instant,
 // }
-// #[derive(Serialize)]
-// pub struct DisplayData{
+
+// struct DataProvidedToFrontend {
+//     positions_json: String,
+// }
+
+#[derive(Serialize)]
+pub struct NodeDataDisplay{
     // coords: Coord3D,
-    // updated: std::time::Instant,
-// }
-// #[derive(Debug, PartialEq, Serialize)]
-// struct Coord3D {
-//     x: f32,
-//     y: f32,
-//     z: f32,
-// }
+    pub nodes: [Node; 4],
+    updated: u128,
+}
+pub type NodeDataDisplayGuarded = Arc<Mutex<NodeDataDisplay>>;
+fn to_guarded(NodeDataDisplay: NodeDataDisplay) -> NodeDataDisplayGuarded{
+    Arc::new(Mutex::new(NodeDataDisplay))
+}
+
+
 
 #[derive(Clone)]
 pub struct AdcRecMetadata{
@@ -135,6 +149,11 @@ struct Command{
 
 
 impl Maurice {
+
+    pub fn get_node_data_display(&self) -> NodeDataDisplayGuarded{
+        self.data_provided_to_frontend.clone()
+    }
+
     // hashmap mapping last 2 digits of mac address to full address
     pub fn replace_client_socket(&mut self, mac: [u8; 6], new_client_socket: ClientSocketWrapper) {
         let mut index = 0;
@@ -160,6 +179,7 @@ impl Maurice {
             self.poll_for_lines_from_stdin_listener();
             self.poll_for_connection_changes();
             self.poll_for_finished_recording();
+            self.update_rov_position(Coord3D{x: 3.0, y: -1.0, z: 5.0});
             // self.client_publisher();
         }
         // rocket_handle.await.unwrap();
@@ -191,7 +211,7 @@ impl Maurice {
 
 
         let (tx_msg_from_client_listener_to_consumer, 
-             rx_msg_consumer) = mpsc::channel::<Msg>();
+             rx_msg_consumer) = channel::<Msg>();
         // let (tx_cmd_from_stdin_listener_to_client,
         //      rx_client_publisher) = mpsc::channel::<Command>();
         
@@ -199,6 +219,11 @@ impl Maurice {
         let rx_stdin_listener = stdin_listener::start_stdin_listener_thread2();
 
         let tx_file_writer = file_writer::start_writer_thread();
+
+        let data_provided_to_frontend = to_guarded(NodeDataDisplay{
+            nodes: config_const_nodes(),
+            updated: 0,
+        });
 
         // let tx_display_data = web_server::start_web_server_thread();
 
@@ -215,6 +240,7 @@ impl Maurice {
             rx_connection_change,
             rx_stdin_listener,
             tx_adc_file_writer: tx_file_writer,
+            data_provided_to_frontend,
             // tx_display_data
             // client_socket_adc_rec_metadatas
         }
