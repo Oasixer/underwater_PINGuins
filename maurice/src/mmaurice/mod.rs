@@ -179,7 +179,6 @@ impl Maurice {
             self.poll_for_lines_from_stdin_listener();
             self.poll_for_connection_changes();
             self.poll_for_finished_recording();
-            self.update_rov_position(Coord3D{x: 3.0, y: -1.0, z: 5.0});
             // self.client_publisher();
         }
         // rocket_handle.await.unwrap();

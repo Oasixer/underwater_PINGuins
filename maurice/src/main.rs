@@ -4,42 +4,19 @@ mod config;
 
 use mmaurice::{
     NodeDataDisplayGuarded,
-    NodeDataDisplay,
 };
 
 #[macro_use]
 mod utils;
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
-use serde_json::to_string as json_to_string;
 
 use actix_web::{get, App, HttpResponse, HttpRequest, HttpServer, Responder, web::{self, Data}};
 
-// struct DataProvidedToFrontend {
-//     positions_json: String,
-// }
-
-
-// #[get("/test")]
-// async fn test(data: Data<NodeDataDisplayGuarded>) -> impl Responder {
-    // let my_struct = data.lock().unwrap();
-    // return String::from(my_struct);
-// }
-// #[get("/test2")]
-// async fn test2(data: Data<NodeDataDisplayGuarded>, req: HttpRequest) -> HttpResponse {
-//     // println!("request: {req:?}");
-//     // println!("model: {item:?}");
-//     let data = data.lock().unwrap();
-//     // let json_str = json_to_string(&data).unwrap();
-//     HttpResponse::Ok().json(data) // <- send json response
-// }
 #[get("/test")]
 async fn test2(data: Data<NodeDataDisplayGuarded>) -> impl Responder{
-    // println!("request: {req:?}");
-    // println!("model: {item:?}");
     let data = data.lock().unwrap();
-    // let json_str = json_to_string(&data).unwrap();
+    println!("data: {:?}", data.nodes[0].coords.x);
     HttpResponse::Ok().json(&*data)
     // json_str // <- send json response
 }
