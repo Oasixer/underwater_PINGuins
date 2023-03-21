@@ -40,6 +40,7 @@ async fn test2(data: Data<NodeDataDisplayGuarded>) -> impl Responder{
     // println!("model: {item:?}");
     let data = data.lock().unwrap();
     // let json_str = json_to_string(&data).unwrap();
+    //println!("sending x:{}",data.nodes[0].coords.x);
     HttpResponse::Ok().json(&*data)
     // json_str // <- send json response
 }

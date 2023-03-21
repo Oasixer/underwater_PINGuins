@@ -18,10 +18,10 @@
 
 static uint16_t FREQUENCIES[N_FREQUENCIES] = {
     18000,  // Hz
-    35000,  // Hz
+    41000,  // Hz
     25000,  // Hz
     49000,  // Hz
-    41000,  // Hz
+    35000,  // Hz
     11000,  // Hz
 };
 

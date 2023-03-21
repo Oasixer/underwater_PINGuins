@@ -84,8 +84,8 @@ pub fn config_const_nodes() -> [Node; 4]{
             mac_str: format!("{:02x}", TEENSY_MACS[2][5]),
             is_connected: false,
             coords: Coord3D{
-                x: 2.0,
-                y: 2.0,
+                x: 1.0,
+                y: 13.0,
                 z: 0.0,
             },
         },
@@ -97,8 +97,8 @@ pub fn config_const_nodes() -> [Node; 4]{
             mac_str: format!("{:02x}", TEENSY_MACS[3][5]),
             is_connected: false,
             coords: Coord3D{
-                x: 0.0,
-                y: 0.0,
+                x: 20.0,
+                y: 1.0,
                 z: 0.0,
             },
         },

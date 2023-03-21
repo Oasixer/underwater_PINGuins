@@ -109,6 +109,8 @@ impl Maurice {
                                     // self.sound_player.play_sound_effect(SoundEffect::
                                     println!("Parsed position: ({}, {}, {})", position.x, position.y, position.z);
                                     self.update_rov_position(position);
+                                    //self.config.x = position.x;
+                                    //self.config.y = position.y;
                                 },
                                 Err(err) => {
                                     eprintln!("Error parsing estimate: {}", err);

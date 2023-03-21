@@ -3,7 +3,7 @@ N = 500;
 fs = 500000;
 timeStep = 1/fs;
 resolution = fs/N;
-freqsOfInterestExact = [10075, 18318, 26515, 34741, 43806, 50375];
+freqsOfInterestExact = [11000, 18000, 25000, 36000, 42000, 50000];
 freqsOfInterest = round(freqsOfInterestExact ./ resolution) * resolution;
 nBins = 100;  % the number of bins in a histogram
 frameDuration = 0.00001;  % the duration of each frame in animation
@@ -13,7 +13,7 @@ period = 200;
 threshold = 200;
 
 %% data
-file = "dist-4-500-1"
+file = "dist-4-500-2"
 data = readUint16File("../adc_recordings/Feb23/" + file)';
 
 %% plot
