@@ -1,11 +1,9 @@
-
 {
     "version": 4,
     "configurations": [
         {
             "name": "Arduino",
-            "compilerPath": "${env:USERPROFILE}\\AppData\\Local\\Arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\bin\\arm-none-eabi-g++",
-                            
+            "compilerPath": "C:\\Users\\Ahmad\\AppData\\Local\\Arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\bin\\arm-none-eabi-g++",
             "compilerArgs": [
                 "-Wall",
                 "-ffunction-sections",
@@ -14,16 +12,20 @@
             ],
             "intelliSenseMode": "gcc-x64",
             "includePath": [
-                "${workspaceFolder}/firmware/main/src/**",
-                "${workspaceFolder}/firmware/main/**",
-                "${env:USERPROFILE}\\AppData\\Local\\Arduino15\\packages\\teensy\\hardware\\avr\\1.57.2\\cores\\teensy4\\**",
-                "${env:USERPROFILE}\\AppData\\Local\\Arduino15\\packages\\teensy\\hardware\\avr\\1.57.2\\libraries\\**",
-                "${env:USERPROFILE}\\AppData\\local\\arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\arm-none-eabi\\include\\c++\\5.4.1\\**",
-                "${env:USERPROFILE}\\AppData\\local\\arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\lib\\gcc\\arm-none-eabi\\5.4.1\\include",
-                "${env:USERPROFILE}\\AppData\\local\\arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\lib\\gcc\\arm-none-eabi\\5.4.1\\include-fixed",
-                "${env:USERPROFILE}\\AppData\\local\\arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\arm-none-eabi\\include"
+                "C:\\Users\\Ahmad\\AppData\\Local\\Temp\\arduino\\sketch-DF0E805676E2A12FF1709F0C8903CA9B\\pch",
+                "C:\\Users\\Ahmad\\AppData\\Local\\Arduino15\\packages\\teensy\\hardware\\avr\\1.57.2\\cores\\teensy4",
+                "C:\\Users\\Ahmad\\AppData\\Local\\Arduino15\\packages\\teensy\\hardware\\avr\\1.57.2\\libraries\\Wire",
+                "C:\\Users\\Ahmad\\AppData\\Local\\Arduino15\\packages\\teensy\\hardware\\avr\\1.57.2\\libraries\\ADC",
+                "C:\\Users\\Ahmad\\AppData\\Local\\Arduino15\\packages\\teensy\\hardware\\avr\\1.57.2\\libraries\\SPI",
+                "c:\\users\\ahmad\\appdata\\local\\arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\arm-none-eabi\\include\\c++\\5.4.1",
+                "c:\\users\\ahmad\\appdata\\local\\arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\arm-none-eabi\\include\\c++\\5.4.1\\arm-none-eabi",
+                "c:\\users\\ahmad\\appdata\\local\\arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\arm-none-eabi\\include\\c++\\5.4.1\\backward",
+                "c:\\users\\ahmad\\appdata\\local\\arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\lib\\gcc\\arm-none-eabi\\5.4.1\\include",
+                "c:\\users\\ahmad\\appdata\\local\\arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\lib\\gcc\\arm-none-eabi\\5.4.1\\include-fixed",
+                "c:\\users\\ahmad\\appdata\\local\\arduino15\\packages\\teensy\\tools\\teensy-compile\\5.4.1\\arm\\arm-none-eabi\\include"
             ],
             "forcedInclude": [
+                "C:\\Users\\Ahmad\\AppData\\Local\\Temp\\arduino\\sketch-DF0E805676E2A12FF1709F0C8903CA9B\\pch\\Arduino.h"
             ],
             "cStandard": "c11",
             "cppStandard": "c++14",
@@ -387,8 +389,7 @@
                 "__ATOMIC_ACQ_REL=4",
                 "__ATOMIC_RELEASE=3",
                 "USBCON"
-            ],
-            "configurationProvider": "ms-vscode.makefile-tools"
+            ]
         }
     ]
 }

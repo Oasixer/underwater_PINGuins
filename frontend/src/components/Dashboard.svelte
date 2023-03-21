@@ -17,7 +17,7 @@
     function parseNodeDataDisplay(data: any, useSampleData = false): NodeDataDisplay {
         let jsonData = useSampleData ? JSON.parse(exampleData()) : data;
         // console.log(typeof jsonData.updated);
-        // console.log(jsonData.updated);
+        console.log(jsonData.updated);
         jsonData.updated = new Date(jsonData.updated);
         // console.log("pls...")
         // console.log(new Date(jsonData.updated));

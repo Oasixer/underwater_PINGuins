@@ -18,5 +18,5 @@ export interface NodeDataDisplay {
 
 export const pixels_per_meter = 50;
 
-export const map_width_meters = 25;
-export const map_height_meters = 10;
+export const map_width_meters = 22.86;
+export const map_height_meters = 14.655;
