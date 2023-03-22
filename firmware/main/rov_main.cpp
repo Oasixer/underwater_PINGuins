@@ -185,8 +185,13 @@ bool RovMain::loop(){
 
             } else if (token.startsWith("N")) {    // change window size
                 config->fourier_window_size = (uint16_t)token.substring(1).toInt();
-                config->micros_send_duration = ADC_PERIOD * config->fourier_window_size;
+                // config->micros_send_duration = ADC_PERIOD * config->fourier_window_size;
                 client->print("Changed window size to " + String(config->fourier_window_size) + "\n");
+
+            } else if (token.startsWith("sd")) {
+                config->micros_send_duration = (uint16_t)token.substring(2).toInt();
+                client->print("Micros send duration changed to " + String(config->micros_send_duration) + "us\n");
+                client->print("in ms: " + String(config->micros_send_duration/1000) + "\n");
             
             } else if (token.startsWith("t")) {    // change threshold
                 config->dft_threshold = (uint32_t)token.substring(1).toInt();

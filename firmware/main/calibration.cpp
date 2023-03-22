@@ -376,8 +376,6 @@ void Calibration::update_rov_depth_50ms(){
     }
 }
 
-
-// !!!! We can bring this back if we need it...
 void Calibration::manual_calibration_coords(const String token){
     int pos = 1;
     for (uint8_t i = 0; i < N_ALL_NODES; ++i){

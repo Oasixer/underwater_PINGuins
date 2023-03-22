@@ -16,7 +16,7 @@ use actix_web::{get, App, HttpResponse, HttpRequest, HttpServer, Responder, web:
 #[get("/test")]
 async fn test2(data: Data<NodeDataDisplayGuarded>) -> impl Responder{
     let data = data.lock().unwrap();
-    println!("data: {:?}", data.nodes[0].coords.x);
+    // println!("data: {:?}", data.nodes[0].coords.x);
     // let json_str = json_to_string(&data).unwrap();
     //println!("sending x:{}",data.nodes[0].coords.x);
     HttpResponse::Ok().json(&*data)

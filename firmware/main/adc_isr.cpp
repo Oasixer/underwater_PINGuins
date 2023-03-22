@@ -9,15 +9,20 @@
 // variables used for checking health
 uint64_t fourier_counter = 0;
 uint16_t last_reading = 0;
+// uint8_t idx_largest_magnitude = 0;
 
 ADC *adc = new ADC();
 float frequency_magnitudes[N_FREQUENCIES] = {0};
+float largest_magnitudes[N_FREQUENCIES] = {0};
 
 // when the measurement finishes, this will be called
 void adc_isr() {
     const uint16_t reading = adc->adc0->readSingle();
     // uint16_t val = (uint16_t)roundf(2048.0 * sinf(2 * M_PI * (float)MY_FREQUENCY / 1000000.0 * (float)(micros() % (1000000 / MY_FREQUENCY))) + 2048.0);
     fourier_update(frequency_magnitudes, reading);
+    for (uint8_t i=0; i<N_FREQUENCIES; i++){
+        largest_magnitudes[i] = max(largest_magnitudes[i], frequency_magnitudes[i]);
+    }
     last_reading = reading;
 
     if (adc->adc0->adcWasInUse) {
@@ -34,6 +39,9 @@ void adc_isr() {
 
 float* get_frequency_magnitudes(){
     return frequency_magnitudes;
+}
+float* get_largest_magnitudes(){
+    return largest_magnitudes;
 }
 uint16_t* get_last_reading(){
     return &last_reading;

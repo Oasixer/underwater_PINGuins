@@ -168,6 +168,9 @@ impl Maurice {
     pub fn get_client_socket(&mut self, mac: [u8; 6]) -> Result<&mut ClientSocketWrapper, String> {
         self.client_sockets.iter_mut().find(|client_socket| client_socket.mac == mac).ok_or_else(|| format!("Could not find client socket with mac: {:?}", mac))
     }
+    // pub fn get_client_socket_immut(t self, mac: [u8; 6]) -> Result<&mut ClientSocketWrapper, String> {
+    //     self.client_sockets.iter_mut().find(|client_socket| client_socket.mac == mac).ok_or_else(|| format!("Could not find client socket with mac: {:?}", mac))
+    // }
 
     pub fn run(&mut self) {
         // let rocket_handle = task::spawn(async move {

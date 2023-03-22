@@ -19,6 +19,7 @@
 
 StationaryMain::StationaryMain(config_t* config, Listener* listener, TcpClient* client){
     frequency_magnitudes = get_frequency_magnitudes();
+    largest_magnitudes = get_largest_magnitudes();
     last_reading = get_last_reading();
     fourier_counter = get_fourier_counter();
     this->config = config;
@@ -128,8 +129,13 @@ bool StationaryMain::loop(){
 
                 } else if (token.startsWith("N")) {    // change window size
                     config->fourier_window_size = (uint16_t)token.substring(1).toInt();
-                    config->micros_send_duration = ADC_PERIOD * config->fourier_window_size;
+                    // config->micros_send_duration = ADC_PERIOD * config->fourier_window_size;
                     client->print("Changed window size to " + String(config->fourier_window_size) + "\n");
+
+                } else if (token.startsWith("sd")) {
+                    config->micros_send_duration = (uint16_t)token.substring(2).toInt();
+                    client->print("Micros send duration changed to " + String(config->micros_send_duration) + "us\n");
+                    client->print("in ms: " + String(config->micros_send_duration/1000) + "\n");
 
                 } else if (token.startsWith("t")) {
                     config->dft_threshold = (uint32_t)token.substring(1).toInt();
@@ -176,17 +182,17 @@ bool StationaryMain::loop(){
                         adc_timer.end();
                         switch_relay_to_send_5ms();
                     }
-                    else if (listener_data.idx_identified_freq == my_stationary_idx * 2 - 1) {
-                        // respond with frequency received + 1 % 6
-                        freq_to_send = get_freq((listener_data.idx_identified_freq + 1) % N_FREQUENCIES);
-                        client->print("I heard (" + String(listener_data.idx_identified_freq) + ": " + 
-                            String(get_freq(listener_data.idx_identified_freq)) +"Hz) I've been told to trigger the next node (" + String((listener_data.idx_identified_freq + 1) % N_FREQUENCIES) 
-                            + ": " + String(freq_to_send) + "Hz)\n");
-                        is_currently_receiving = false;
-                        ts_start_talking = listener_data.ts_peak + config->period;
-                        listener->end_adc_timer();
-                        switch_relay_to_send_5ms();
-                    }
+                    // else if (listener_data.idx_identified_freq == my_stationary_idx * 2 - 1) {
+                    //     // respond with frequency received + 1 % 6
+                    //     freq_to_send = get_freq((listener_data.idx_identified_freq + 1) % N_FREQUENCIES);
+                    //     client->print("I heard (" + String(listener_data.idx_identified_freq) + ": " + 
+                    //         String(get_freq(listener_data.idx_identified_freq)) +"Hz) I've been told to trigger the next node (" + String((listener_data.idx_identified_freq + 1) % N_FREQUENCIES) 
+                    //         + ": " + String(freq_to_send) + "Hz)\n");
+                    //     is_currently_receiving = false;
+                    //     ts_start_talking = listener_data.ts_peak + config->period;
+                    //     listener->end_adc_timer();
+                    //     switch_relay_to_send_5ms();
+                    // }
                     else{
                         listener->begin(listener_data.ts_peak + config->period - MICROS_TO_LISTEN_BEFORE_END_OF_PERIOD);
                     }
@@ -196,13 +202,25 @@ bool StationaryMain::loop(){
             }
         }
         
+        // if (micros() - t_last_printed > 1000000){
+        //     client->print(uint64ToString(*fourier_counter) + " Hz, Last Value: " + 
+        //         String(*last_reading) + ", magnitudes: [" + 
+        //         String(frequency_magnitudes[0], 0) + ", " + String(frequency_magnitudes[1], 0) + ", " + 
+        //         String(frequency_magnitudes[2], 0) + ", " + String(frequency_magnitudes[3], 0) + ", " + 
+        //         String(frequency_magnitudes[4], 0) + ", " + String(frequency_magnitudes[5], 0) + "]\n");
+        //     t_last_printed = micros();
+        //     *fourier_counter = 0;
+        // }
         if (micros() - t_last_printed > 1000000){
             client->print(uint64ToString(*fourier_counter) + " Hz, Last Value: " + 
                 String(*last_reading) + ", magnitudes: [" + 
-                String(frequency_magnitudes[0], 0) + ", " + String(frequency_magnitudes[1], 0) + ", " + 
-                String(frequency_magnitudes[2], 0) + ", " + String(frequency_magnitudes[3], 0) + ", " + 
-                String(frequency_magnitudes[4], 0) + ", " + String(frequency_magnitudes[5], 0) + "]\n");
+                String(largest_magnitudes[0], 0) + ", " + String(largest_magnitudes[1], 0) + ", " + 
+                String(largest_magnitudes[2], 0) + ", " + String(largest_magnitudes[3], 0) + ", " + 
+                String(largest_magnitudes[4], 0) + ", " + String(largest_magnitudes[5], 0) + "]\n");
             t_last_printed = micros();
+            for (uint8_t i=0; i<6; i++){
+                largest_magnitudes[i] = 0;
+            }
             *fourier_counter = 0;
         }
     }

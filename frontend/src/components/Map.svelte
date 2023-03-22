@@ -3,7 +3,7 @@
 
     // export let nodeImg;
     import type { Node, NodeDataDisplay } from "./node_data";
-    import { pixels_per_meter, map_height_meters, map_width_meters } from "./node_data";
+    import { pixels_per_meter, map_height_meters, map_width_meters, posToLeftRelPixels } from "./node_data";
     // let map_div: HTMLElement;
     let last_updated: Date = new Date();
 
@@ -11,6 +11,8 @@
     export let counter: number;
     export let mouseX = 0;
     export let mouseY = 0;
+
+    const map_outer_pad = 30;
     // export let i: number;
     let nodeInner: HTMLElement[]
 
@@ -39,9 +41,13 @@
         }
         nodes[1].is_connected = false;
         for (let i = 0; i < nodes.length; i++) {
-            nodeInner[i].style.left = `${nodes[i].coords.x* pixels_per_meter - height_width_icon/2}px`;
-            nodeInner[i].style.top = `${nodes[i].coords.y*pixels_per_meter -  height_width_icon/2}px`;
-            nodeInner[i].style.opacity = `${nodes[i].is_connected ? 1 : 0.2}`;
+            let x = posToLeftRelPixels(nodes[i].coords.x, true) - height_width_icon/2;
+            let y = posToLeftRelPixels(nodes[i].coords.y, false) - height_width_icon/2;
+            console.log(i, nodes[i].idx, x, y)
+            console.log("from resolved: ", nodes[i].coords.x, nodes[i].coords.y);
+            nodeInner[i].style.left = `${x}px`;
+            nodeInner[i].style.top = `${y}px`;
+            nodeInner[i].style.opacity = `${nodes[i].is_connected ? 1 : 0.4}`;
         }
         // nodeInner[0].style.left = `${counter*5}px`;
         // nodeDiv.style.left = `${node_data.coords.x * pixels_per_meter}px`;
@@ -77,10 +83,10 @@ function setMouse(event: any) {
 }
 
 function updatePosition() {
-  if (isHover(mapDiv)) {
+  if (true){//isHover(mapDiv)) {
         const { top, left } = mapDiv.getBoundingClientRect();
-        mouseX = mouse.x - left;
-        mouseY = mouse.y - top; 
+        mouseX = mouse.x - (left+map_width_meters*pixels_per_meter/2);
+        mouseY = mouse.y - (top+map_height_meters*pixels_per_meter/2); 
   }
 }
 function resetPosition() {
@@ -101,50 +107,92 @@ function isHover(e: any) {
 
 <!-- <div bind:this={map_div} class="node-div"> -->
 <!-- style="margin-left: 80px; width: 500px; height: 500px; border: 2px solid black;"> -->
-<div class='map-outer' style="width: {map_width_meters*pixels_per_meter}px;">
+<div class='map-outer' style="width: {map_width_meters*pixels_per_meter+map_outer_pad*2}px; height: {map_height_meters*pixels_per_meter+map_outer_pad*2}px;
+ padding-left: {map_outer_pad}px; padding-top: {map_outer_pad}px;">
+     <!-- style="width: {map_width_meters*pixels_per_meter}px;"> -->
     <div bind:this={mapDiv} class='map-div' style='height: {map_height_meters*pixels_per_meter}px; width: {map_width_meters*pixels_per_meter}px'
     on:mouseenter={trackMouse}
     on:mousemove={updatePosition}
-    on:mouseleave={resetPosition}
     >
-        <img src="arrow3_white.png" alt=""/>
-        <p class="xlabel" style="">x</p>
+    <!-- on:mouseleave={resetPosition} -->
+
     <!-- <div class='axis_arrow'>
     </div> -->
     {#if mounted}
         {#each node_data.nodes as node, i}
-            <div bind:this={nodeInner[i]} class="node-inner">
+            <div bind:this={nodeInner[i]} class="node-inner" style="width: {height_width_icon}px; height: {height_width_icon}px;">
                 <!-- <img src="favicon.png" style="position: absolute; width: 32px; height: 32px; left: 100px; top: 4px;"/> -->
-                <img src="{get_node_img(node)}" style="width: 32px; height: 32px;" alt=""/>
+                <img src="{get_node_img(node)}" style="width: {height_width_icon}px; height: {height_width_icon}px;" alt=""/>
+                <p class="label nodelabel" style="top: -{height_width_icon/2+12}px; left: {height_width_icon/2-4}px;">{node.idx}</p>
             </div>
         {/each}
     {/if}
+    </div>
+    <div class="x-arrow-container" style="top: {-map_height_meters*pixels_per_meter/2}px;
+    left: {map_height_meters*pixels_per_meter/2}px">
+        <img class="x-arrow" src="arrow3_white_240x20.png" alt=""/>
+        <p class="xlabel label" style="">x</p>
+    </div>
+    <div class="y-arrow-container" style="top: {-map_height_meters*pixels_per_meter/2-51-120}px;
+    left: {map_height_meters*pixels_per_meter/2}px">
+        <img class="y-arrow" src="arrow3_white_240x20.png" alt=""/>
+        <p class="ylabel label" style="">y</p>
     </div>
 </div>
 
 
 
 <style lang="scss">
-    p.xlabel{
+    *{
+        -webkit-user-select: none; /* Safari */
+        -ms-user-select: none; /* IE 10 and IE 11 */
+        user-select: none; /* Standard syntax */
+    }
+    p.nodelabel{
+        color: black;
+        font-size: 16px;
+    }
+    .label{
         position: relative;
-        top: -32px;
-        left: 465px;
         font-family: "Roboto", "Helvetica", "Arial", sans-serif;
         font-size: 24px;
         color: white;
     }
+    div.y-arrow-container{
+        position: relative;
+        p.ylabel{
+            top: -118px;
+            left: 8px;
+        }
+        img.y-arrow{
+            // transform: rotate(270deg);
+            transform: translateX(-50%) rotate(-90deg); /* W3C */  
+
+        }
+    }
+    div.x-arrow-container{
+        position: relative;
+        img.x-arrow{
+
+        }
+        p.xlabel{
+            top: -45px;
+            left: 200px;
+        }
+    }
     div.map-outer{
         // position: static; 
-        display: flex;
+        // display: flex;
         // display: flex;
         width: fit-content;
         height: fit-content;
         // height: 700px;
         // height: 100%;
         background-color: #759ace;
-        border-radius: 5px;
-        padding: 30px;
+        // border-radius: 5px;
+        // padding: 30px;
         box-shadow: 0 16px 38px -12px rgb(0 0 0 / 56%), 0 4px 25px 0px rgb(0 0 0 / 12%), 0 8px 10px -5px rgb(0 0 0 / 20%);
+        border-radius: 50%;
         div.map-div{
             div.axis_arrow{
                 position: absolute;
@@ -161,12 +209,16 @@ function isHover(e: any) {
                 }
             }
             border: 2px solid black;
+            border-radius: 50%;
             background-color: #96b8e6;
             position: relative;
         }
     }
     div.node-inner{
         position: absolute;
+        img{
+
+        }
         // width: fit-content;
     }
 </style>

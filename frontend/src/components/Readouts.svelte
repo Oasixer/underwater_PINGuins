@@ -6,6 +6,9 @@
     export let counter: number = 0;
     export let mouseX: number;
     export let mouseY: number;
+    const READOUT_N_DIGITS = 3;
+    const CONNECTED_STR = "Connected";
+    const DISCONNECTED_STR = "Disconnected";
 
     interface SingleReadout{
         name: string;
@@ -17,6 +20,7 @@
     }
 
     let readouts: Readouts = {readouts: []};
+    let conn_readouts: Readouts = {readouts: []};
 
     function node_data_to_readouts(node_data: NodeDataDisplay): Readouts{
         let readouts: Readouts = {readouts: []};
@@ -24,8 +28,8 @@
             if (node_data.nodes){
                 if (node_data.nodes.length > 0){
                     console.log("hi!");
-                    readouts.readouts.push({name: "rov x", value: node_data.nodes[0].coords.x.toString()});
-                    readouts.readouts.push({name: "rov y", value: node_data.nodes[0].coords.y.toString()});
+                    readouts.readouts.push({name: "rov x", value: node_data.nodes[0].coords.x.toFixed(READOUT_N_DIGITS)});
+                    readouts.readouts.push({name: "rov y", value: node_data.nodes[0].coords.y.toFixed(READOUT_N_DIGITS)});
                 }
                 readouts.readouts.push({name: "updated", value: node_data.updated.toLocaleTimeString()});
             }
@@ -36,11 +40,25 @@
                 mouseY_str = "N/A";
             }
             else{
-                mouseX_str = (mouseX/ pixels_per_meter).toString();
-                mouseY_str = (mouseY / pixels_per_meter).toString();
+                mouseX_str = (mouseX/ pixels_per_meter).toFixed(READOUT_N_DIGITS);
+                mouseY_str = (mouseY / pixels_per_meter).toFixed(READOUT_N_DIGITS);
             }
             readouts.readouts.push({name: "mouse x", value: mouseX_str});
             readouts.readouts.push({name: "mouse y", value: mouseY_str});
+        }
+        return readouts;
+    }
+    
+    function node_data_to_conn_readouts(node_data: NodeDataDisplay): Readouts{
+        let readouts: Readouts = {readouts: []};
+        if (node_data){
+            if (node_data.nodes){
+                if (node_data.nodes.length > 0){
+                    node_data.nodes.forEach(i => {
+                       readouts.readouts.push({name: i.name, value: i.is_connected?CONNECTED_STR:DISCONNECTED_STR});
+                    });
+                }
+            }
         }
         return readouts;
     }
@@ -48,22 +66,38 @@
     function update(counter: number){
         counter = counter;
         readouts = node_data_to_readouts(node_data);
+        conn_readouts = node_data_to_conn_readouts(node_data);
     }
     $: update(counter);
 </script>
 
-<div class='readouts'>
-    <h1 style="margin-bottom: 30px;">Readouts</h1>
-    <div class="readout">
-        <h3 class="name-width" style="font-weight: 700;">name</h3>
-        <h3 class="val-width" style="font-weight: 700;">value</h3>
+<div class='vstack'>
+    <div class='readouts' style="margin-bottom: 35px;">
+        <h1 style="margin-bottom: 30px;">Readouts</h1>
+        <div class="readout">
+            <h3 class="name-width" style="font-weight: 700;">Name</h3>
+            <h3 class="val-width" style="font-weight: 700;">Value</h3>
+        </div>
+        {#each readouts.readouts as readout}
+        <div class="readout">
+            <h3 class="name-width">{readout.name}</h3>
+            <p class="val-width">{readout.value}</p>
+        </div>
+        {/each}
     </div>
-    {#each readouts.readouts as readout}
-    <div class="readout">
-        <h3 class="name-width">{readout.name}</h3>
-        <p class="val-width">{readout.value}</p>
+    <div class='readouts' style="margin-top: auto;">
+        <h1 style="margin-bottom: 30px;">Connections</h1>
+        <div class="readout">
+            <h3 class="name-width" style="font-weight: 700;">Node</h3>
+            <h3 class="val-width" style="font-weight: 700;">Connection</h3>
+        </div>
+        {#each conn_readouts.readouts as readout}
+        <div class="readout">
+            <h3 class="name-width">{readout.name}</h3>
+            <p class="val-width" style="background-color: {readout.value===CONNECTED_STR?'#163':'#a12'};">{readout.value}</p>
+        </div>
+        {/each}
     </div>
-    {/each}
 </div>
 <style lang="scss">
     *{
@@ -71,16 +105,28 @@
         font-family: "Roboto", "Helvetica", "Arial", sans-serif;
         font-size: 16px;
     }
+    p.connected{
+        background-color: #164;
+    }
+    p.disconnected{
+        background-color: #612;
+    }
+
+    div.vstack{
+        display: flex;
+        flex-flow: column nowrap;
+    }
     div.readouts{
         display: flex;
         flex-flow: column nowrap;
         justify-content: flex-start;
         align-items: flex-start;
+        width: 260px;
         background-color: white;
         border-radius: 5px;
         padding-right: 18px;
         padding-bottom: 18px;
-        margin-right: 80px;
+        margin-left: 80px;
         height: fit-content;
         box-shadow: 0 16px 38px -12px rgb(0 0 0 / 56%), 0 4px 25px 0px rgb(0 0 0 / 12%), 0 8px 10px -5px rgb(0 0 0 / 20%);
         h1 {

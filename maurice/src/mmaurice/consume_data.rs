@@ -98,7 +98,7 @@ impl Maurice {
                         let last_non_zero_byte = msg.bytes.iter().rposition(|&b| b != 0).unwrap();
                         // writeln!(client_socket_wrapper.stream_file.as_mut().unwrap(), "{}", String::from_utf8(msg.bytes[1..last_non_zero_byte+1].to_vec()).unwrap()).expect("failed to write to file");
                         let msg_str = String::from_utf8(msg.bytes[1..last_non_zero_byte+1].to_vec()).unwrap();
-                        if !msg_str.starts_with("[HB") || crate::config::HIDE_HB == false{
+                        if !msg_str.starts_with("HB") || crate::config::HIDE_HB == false{
                             client_socket_wrapper.fprint(&format!("<{}", &msg_str));
                         }
 
