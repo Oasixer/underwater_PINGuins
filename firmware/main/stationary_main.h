@@ -25,7 +25,7 @@ class StationaryMain {
         uint64_t ts_peak_finding_timeout = 0;
 
         uint8_t idx_freq_detected = 0;
-        uint8_t my_stationary_idx = 2;
+        uint8_t my_stationary_idx = 0;
         uint16_t freq_to_send = get_freq(my_stationary_idx);
 
         float curr_max_magnitude = 0;
