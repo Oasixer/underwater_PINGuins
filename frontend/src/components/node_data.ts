@@ -10,6 +10,7 @@ export interface Node{
         y: number;
         z: number;
     };
+    last_ping: Date;
 }
 export interface NodeDataDisplay {
     nodes: Node[];
@@ -18,8 +19,9 @@ export interface NodeDataDisplay {
 
 // export const pixels_per_meter = 50;
 
-// export const map_width_meters = 22.86;
-// export const map_height_meters = 14.655;
+export const replay_map_width_meters = 22.86;
+export const replay_map_height_meters = 14.655;
+
 export const map_height_meters: number = 1.3;
 export const map_width_meters: number = 1.3;
 

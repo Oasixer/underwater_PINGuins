@@ -12,7 +12,8 @@
     };
     function exampleData(){
         // return '{"nodes":[{"name":"SKPR","desc":"Skipper: ROV","idx":0,"mac":[4,233,229,20,15,20],"mac_str":"14","is_connected":false,"coords":{"x":1,"y":1,"z":0}},{"name":"RICO", "desc":"Rico: Stationary 1","idx":1,"mac":[4,233,229,20,14,241],"mac_str":"f1","is_connected":false,"coords":{"x":6,"y":6,"z":0}},{"name":"KWSK","desc":"Kowalski: Stationary 2","idx":2,"mac":[4,233,229,20,63,65],"mac_str":"41","is_connected":false,"coords":{"x":5,"y":1,"z":0}},{"name":"PRVT","desc":"Private: Stationary 3","idx":3,"mac":[4,233,229,20,63,30],"mac_str":"1e","is_connected":false,"coords":{"x":1,"y":7,"z":0}}],"updated":1678710317637}';
-        return '{"nodes":[{"name":"SKPR","desc":"Skipper: ROV","idx":0,"mac":[4,233,229,20,15,20],"mac_str":"14","is_connected":false,"coords":{"x":0.5,"y":0.5,"z":0}},{"name":"RICO", "desc":"Rico: Stationary 1","idx":1,"mac":[4,233,229,20,14,241],"mac_str":"f1","is_connected":false,"coords":{"x":0.3,"y":0.3,"z":0}},{"name":"KWSK","desc":"Kowalski: Stationary 2","idx":2,"mac":[4,233,229,20,63,65],"mac_str":"41","is_connected":false,"coords":{"x":-0.3,"y":-0.3,"z":0}},{"name":"PRVT","desc":"Private: Stationary 3","idx":3,"mac":[4,233,229,20,63,30],"mac_str":"1e","is_connected":false,"coords":{"x":-0.6,"y":0,"z":0}}],"updated":1678710317637}';
+        // return '{"nodes":[{"name":"SKPR","desc":"Skipper: ROV","idx":0,"mac":[4,233,229,20,15,20],"mac_str":"14","is_connected":false,"coords":{"x":0.5,"y":0.5,"z":0}},{"name":"RICO", "desc":"Rico: Stationary 1","idx":1,"mac":[4,233,229,20,14,241],"mac_str":"f1","is_connected":false,"coords":{"x":0.3,"y":0.3,"z":0}},{"name":"KWSK","desc":"Kowalski: Stationary 2","idx":2,"mac":[4,233,229,20,63,65],"mac_str":"41","is_connected":false,"coords":{"x":-0.3,"y":-0.3,"z":0}},{"name":"PRVT","desc":"Private: Stationary 3","idx":3,"mac":[4,233,229,20,63,30],"mac_str":"1e","is_connected":false,"coords":{"x":-0.6,"y":0,"z":0}}],"updated":1678710317637}';
+        return '{"nodes":[{"name":"SKPR","desc":"Skipper: ROV","idx":0,"mac":[4,233,229,20,15,20],"mac_str":"14","is_connected":false,"coords":{"x":0.5,"y":0.5,"z":0}, last_ping: 0},{"name":"RICO", "desc":"Rico: Stationary 1","idx":1,"mac":[4,233,229,20,14,241],"mac_str":"f1","is_connected":false,"coords":{"x":0.3,"y":0.3,"z":0}, last_ping: 0},{"name":"KWSK","desc":"Kowalski: Stationary 2","idx":2,"mac":[4,233,229,20,63,65],"mac_str":"41","is_connected":false,"coords":{"x":-0.3,"y":-0.3,"z":0}, last_ping: 0},{"name":"PRVT","desc":"Private: Stationary 3","idx":3,"mac":[4,233,229,20,63,30],"mac_str":"1e","is_connected":false,"coords":{"x":-0.6,"y":0,"z":0}, last_ping: 0}],"updated":1678710317637}';
     }
 
     function parseNodeDataDisplay(data: any, useSampleData = false): NodeDataDisplay {
@@ -25,6 +26,9 @@
         // console.log(jsonData.updated.toLocaleTimeString());
         const nodes = jsonData as NodeDataDisplay;
         nodes.updated = new Date(nodes.updated);
+        for (let i=0; i<4; i++){
+            nodes.nodes[i].last_ping = new Date(nodes.nodes[i].last_ping)
+        }
         return nodes;
     }
     

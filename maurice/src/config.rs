@@ -33,6 +33,7 @@ pub struct Node {
     mac_str: String,
     pub is_connected: bool,
     pub coords: Coord3D,
+    pub last_ping: u128,
 }
 
 const TEENSY_MACS: [[u8; 6]; KNOWN_TEENSY_METADATA_COUNT] = [
@@ -63,6 +64,7 @@ pub fn config_const_nodes() -> [Node; 4]{
                 y: 0.0,
                 z: 0.0,
             },
+            last_ping: 0,
         },
         Node{
             name: String::from("RICO"),
@@ -78,6 +80,7 @@ pub fn config_const_nodes() -> [Node; 4]{
                 // y: 1.0,
                 z: 0.0,
             },
+            last_ping: 0,
         },
         Node{
             name: String::from("KWSK"),
@@ -91,6 +94,7 @@ pub fn config_const_nodes() -> [Node; 4]{
                 y: 0.65,
                 z: 0.0,
             },
+            last_ping: 0,
         },
         Node{
             name: String::from("PRVT"),
@@ -104,6 +108,7 @@ pub fn config_const_nodes() -> [Node; 4]{
                 y: 0.0,
                 z: 0.0,
             },
+            last_ping: 0,
         },
     ];
 }

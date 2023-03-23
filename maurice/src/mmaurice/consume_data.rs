@@ -117,6 +117,26 @@ impl Maurice {
                                 },
                             }
                         }
+                        else if msg_str.starts_with("I heard my own frequency ("){
+                            let mut index: usize = msg_str
+                                    .chars()
+                                    .skip_while(|&c| c != '(')
+                                    .skip(1)
+                                    .take_while(|&c| c.is_numeric())
+                                    .collect::<String>()
+                                    .parse()
+                                    .unwrap();
+                            if index == 0{
+                                index = 1;
+                            }
+                            else if index == 2{
+                                index = 2;
+                            }
+                            else if index == 4{
+                                index = 3;
+                            }
+                            self.add_ping(index);
+                        }
                         else if msg_str.starts_with("HB["){
                             client_socket_wrapper.last_hb_received = Instant::now();
                             // if msg_str.starts_with("HB: ROV"){
@@ -135,6 +155,15 @@ impl Maurice {
         }
         // sleep(self.config.max_msg_poll_interval_ms);
     }
+    
+    pub fn add_ping(&self, idx: usize){
+    //     // let mut pos = self.data_provided_to_frontend.lock().unwrap().nodes[0].coords;
+        let mut data = self.data_provided_to_frontend.lock().unwrap();
+        data.nodes[idx].last_ping = get_posix_millis();
+        data.updated = get_posix_millis();
+    }
+        
+    // }
 
     pub fn update_rov_position(&self, position: Coord3D){
         // let mut pos = self.data_provided_to_frontend.lock().unwrap().nodes[0].coords;

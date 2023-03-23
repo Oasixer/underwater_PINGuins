@@ -12,6 +12,9 @@
     export let mouseX = 0;
     export let mouseY = 0;
 
+
+    const PING_FLASH_MS = 1000;
+
     const map_outer_pad = 30;
     // export let i: number;
     let nodeInner: HTMLElement[]
@@ -40,6 +43,7 @@
             return;
         }
         nodes[1].is_connected = false;
+        let cur_time: Date = new Date();
         for (let i = 0; i < nodes.length; i++) {
             let x = posToLeftRelPixels(nodes[i].coords.x, true) - height_width_icon/2;
             let y = posToLeftRelPixels(nodes[i].coords.y, false) - height_width_icon/2;
@@ -48,6 +52,23 @@
             nodeInner[i].style.left = `${x}px`;
             nodeInner[i].style.top = `${y}px`;
             nodeInner[i].style.opacity = `${nodes[i].is_connected ? 1 : 0.4}`;
+
+            if (nodes[i].is_connected){
+                if (cur_time.getTime() - nodes[i].last_ping.getTime() < PING_FLASH_MS){
+                    let timeElapsed = cur_time.getTime() - nodes[i].last_ping.getTime();
+                    let progress = timeElapsed / PING_FLASH_MS;
+                    const BEGIN_PING_SCALE = 3;
+                    let contractionAmount = BEGIN_PING_SCALE-1;
+                    let scale = BEGIN_PING_SCALE - (contractionAmount * progress);
+                    nodeInner[i].style.transform = `scale(${scale})`;// scale to 2x size
+                }
+                else{
+                    nodeInner[i].style.transform = "none";// no transform
+                }
+            }
+            else{
+                nodeInner[i].style.transform = "none";// no transform
+            }
         }
         // nodeInner[0].style.left = `${counter*5}px`;
         // nodeDiv.style.left = `${node_data.coords.x * pixels_per_meter}px`;
