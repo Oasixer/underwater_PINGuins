@@ -33,7 +33,7 @@ pub struct Node {
     mac_str: String,
     pub is_connected: bool,
     pub coords: Coord3D,
-    pub last_ping: u128,
+    pub last_dist: float,
 }
 
 const TEENSY_MACS: [[u8; 6]; KNOWN_TEENSY_METADATA_COUNT] = [

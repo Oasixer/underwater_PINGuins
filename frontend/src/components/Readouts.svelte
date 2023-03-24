@@ -1,14 +1,18 @@
 <script lang="ts">
     // let node_divs: HTMLElement[] = [node0div, node1div, node2div, node3div];
     import type { Node, NodeDataDisplay } from "./node_data";
-    import { pixels_per_meter } from "./node_data";
+    import { replayMap, roundMap } from "./node_data";
     export let node_data: NodeDataDisplay;
     export let counter: number = 0;
     export let mouseX: number;
     export let mouseY: number;
+    export let replay_pac: bool = false;
     const READOUT_N_DIGITS = 3;
     const CONNECTED_STR = "Connected";
     const DISCONNECTED_STR = "Disconnected";
+
+    $: map = replay_pac?replayMap:roundMap;
+    $: pixels_per_meter = map.pixels_per_meter;
 
     interface SingleReadout{
         name: string;
