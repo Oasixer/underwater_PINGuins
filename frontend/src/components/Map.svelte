@@ -1,4 +1,4 @@
-<script lang=typescript>
+<script lang="ts">
     import { onMount } from "svelte";
 
     // export let nodeImg;
@@ -107,7 +107,7 @@ function isHover(e: any) {
     on:mousemove={updatePosition}
     on:mouseleave={resetPosition}
     >
-        <img src="arrow3_white.png" alt=""/>
+        <img src="arrow3_white.png" />
         <p class="xlabel" style="">x</p>
     <!-- <div class='axis_arrow'>
     </div> -->

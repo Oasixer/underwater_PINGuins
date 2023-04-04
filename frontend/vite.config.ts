@@ -13,15 +13,14 @@ export default ({ mode }) => {
 				proxy: {
 					'/api': 'http://localhost:8080'
 				}
-			},
-		}
+			}
+		};
 	}
 	return defineConfig({
 		plugins: [sveltekit()],
-		...devEnvSettings,
-
+		...devEnvSettings
 	});
-};// import { sveltekit } from '@sveltejs/kit/vite';
+}; // import { sveltekit } from '@sveltejs/kit/vite';
 // // import {svelte} from "@sveltejs/vite-plugin-svelte"
 // import { defineConfig } from 'vite';
 
