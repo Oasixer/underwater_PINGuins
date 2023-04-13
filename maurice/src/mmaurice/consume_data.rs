@@ -98,7 +98,7 @@ impl Maurice {
                         let last_non_zero_byte = msg.bytes.iter().rposition(|&b| b != 0).unwrap();
                         // writeln!(client_socket_wrapper.stream_file.as_mut().unwrap(), "{}", String::from_utf8(msg.bytes[1..last_non_zero_byte+1].to_vec()).unwrap()).expect("failed to write to file");
                         let msg_str = String::from_utf8(msg.bytes[1..last_non_zero_byte+1].to_vec()).unwrap();
-                        if !msg_str.starts_with("[HB") || crate::config::HIDE_HB == false{
+                        if !msg_str.starts_with("HB") || crate::config::HIDE_HB == false{
                             client_socket_wrapper.fprint(&format!("<{}", &msg_str));
                         }
 
@@ -116,6 +116,26 @@ impl Maurice {
                                     eprintln!("Error parsing estimate: {}", err);
                                 },
                             }
+                        }
+                        else if msg_str.starts_with("I heard my own frequency ("){
+                            let mut index: usize = msg_str
+                                    .chars()
+                                    .skip_while(|&c| c != '(')
+                                    .skip(1)
+                                    .take_while(|&c| c.is_numeric())
+                                    .collect::<String>()
+                                    .parse()
+                                    .unwrap();
+                            if index == 0{
+                                index = 1;
+                            }
+                            else if index == 2{
+                                index = 2;
+                            }
+                            else if index == 4{
+                                index = 3;
+                            }
+                            self.add_ping(index);
                         }
                         else if msg_str.starts_with("HB["){
                             client_socket_wrapper.last_hb_received = Instant::now();
@@ -135,6 +155,15 @@ impl Maurice {
         }
         // sleep(self.config.max_msg_poll_interval_ms);
     }
+    
+    pub fn add_ping(&self, idx: usize){
+    //     // let mut pos = self.data_provided_to_frontend.lock().unwrap().nodes[0].coords;
+        let mut data = self.data_provided_to_frontend.lock().unwrap();
+        data.nodes[idx].last_ping = get_posix_millis();
+        data.updated = get_posix_millis();
+    }
+        
+    // }
 
     pub fn update_rov_position(&self, position: Coord3D){
         // let mut pos = self.data_provided_to_frontend.lock().unwrap().nodes[0].coords;

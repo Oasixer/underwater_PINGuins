@@ -7,7 +7,7 @@ use std::io::Write;
 use std::sync::mpsc::{channel, Sender, Receiver};
 
 use crate::utils::{create_parent_directories};
-use crate::config::{MSG_SIZE_BYTES, HB_TIMEOUT_MS};
+use crate::config::{MSG_SIZE_BYTES, HB_TIMEOUT_MS, Node};
 use super::{
     msound_player::{ SoundEffect, },
     Maurice,
@@ -223,6 +223,34 @@ impl Maurice {
                         sound_effect = SoundEffect::Connect;
                         // self.sound_player.play_sound_effect(SoundEffect::Connect);
                         client_socket_wrapper.fprint_create_file("Connected!\n");
+
+                        // if client_socket_wrapper.mac[5] == (0x14 as u8){
+                            
+                            // let data = self.data_provided_to_frontend.lock().unwrap();
+                            // let coords_string = generate_coords_string(&data.nodes);
+                            // let cmd_str = format!("14 C{}", coords_string);
+                            // // client_socket_wrapper.
+                            // // let cmd_str: String = tokens.join(" ");
+                            // // fill cmd_bytes in with cmd_str, right padded w/ zeros
+                            // // const msg_size_bytes: usize = self.config.OUTGOING_CMD_SIZE_BYTES;
+                            // let mut cmd_bytes: [u8; super::OUTGOING_CMD_SIZE_BYTES] = [0; super::OUTGOING_CMD_SIZE_BYTES];
+                            // for (i,byte) in cmd_str.bytes().enumerate(){
+                            //     cmd_bytes[i] = byte;
+                            // }
+
+                            // // if not a w command, then its a string command that we will allow the teensy to handle.
+                            // let mac_str = format!("{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+                            // let command = Command{
+                            //     target_mac: mac,
+                            //     bytes: cmd_bytes,
+                            // };
+                            // // let command = Command{
+                            // //     target_mac: client_socket_wrapper.mac,
+                            // //     bytes: 
+                            // // }
+                            // // self.report_cmd(&format!("Sending command: <{}> to {}",cmd_str, mac_str));
+                            // let result = client_socket_wrapper.stream.write_all(&command.bytes);
+                        // }
                     }
                     else{
                         sound_effect = SoundEffect::Disconnect;
@@ -240,4 +268,15 @@ impl Maurice {
             node.unwrap().is_connected = connection_change.is_connected;
         }
     }
+}
+
+fn generate_coords_string(nodes: &[Node]) -> String {
+    let mut coords_string = String::new();
+    for node in nodes {
+        let coords = &node.coords;
+        coords_string.push_str(&format!("{};{};{}", coords.x, coords.y, coords.z));
+        coords_string.push(';');
+    }
+    coords_string.pop(); // Remove the trailing ';'
+    coords_string
 }

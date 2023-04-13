@@ -37,7 +37,7 @@ RovMain rov_main = RovMain(&config, &listener, &client, &talker);
 // void setup() {
 //     Serial.begin(9600);
 
-bool USE_ROV = false;
+bool USE_ROV = true;
 
 uint32_t hb_count = 0;
 uint32_t hb_interval_ms = 2000;

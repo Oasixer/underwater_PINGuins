@@ -13,6 +13,7 @@ use rustyline::error::ReadlineError;
 use rustyline;
 // use rustyline::{DefaultEditor, Result};
 
+// #[cfg(feature = "with-file-history")]
 // #[macro_use]
 // use 
 // use std::time::Duration;
@@ -35,12 +36,12 @@ pub fn start_stdin_listener_thread2() -> Receiver<String> {
     thread::spawn(move || {
         let mut rl = rustyline::DefaultEditor::new().unwrap();
 
+        #[cfg(feature = "with-file-history")]
+        if rl.load_history("history.txt").is_err() {
+            println!("No previous history.");
+        }
         loop {
             // `()` can be used when no completer is required
-            // #[cfg(feature = "with-file-history")]
-            // if rl.load_history("history.txt").is_err() {
-            //     println!("No previous history.");
-            // }
             let mut buffer = String::new();
             let readline = rl.readline(">> ");
             match readline {
@@ -48,6 +49,7 @@ pub fn start_stdin_listener_thread2() -> Receiver<String> {
                     rl.add_history_entry(line.as_str());
                     buffer = line;
                     // println!("Line: {}", &buffer);
+                    rl.save_history("history.txt");
                 },
                 Err(ReadlineError::Interrupted) => {
                     println!("CTRL-C");
@@ -69,14 +71,12 @@ pub fn start_stdin_listener_thread2() -> Receiver<String> {
         }
     });
     rx
-        // #[cfg(feature = "with-file-history")]
-        // rl.save_history("history.txt");
         // Ok(())
             // stdin().read_line(&mut buffer).unwrap();
 }
 
 impl Maurice{
-    fn report_cmd(&self, info: &str){
+    pub fn report_cmd(&self, info: &str){
         println!("{}",info);
         // println!("Type next command...");
     }

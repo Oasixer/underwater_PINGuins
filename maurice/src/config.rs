@@ -6,7 +6,7 @@ use serde::Serialize;
 
 
 const TIMEOUT_READ_MS: u64 = 1000;
-pub const HB_TIMEOUT_MS: u64 = 3000;
+pub const HB_TIMEOUT_MS: u64 = 5000;
 pub const MSG_SIZE_BYTES: usize = 800;
 pub const OUTGOING_CMD_SIZE_BYTES: usize = 200;
 const MAX_MSG_POLL_INTERVAL_MS: u64 = 1;
@@ -14,7 +14,7 @@ pub const DATA_STREAM_DIR: &str = "../data_stream";
 pub const ADC_DATA_DIR: &str = "adc_data";
 pub const CLI_DATA_DIR: &str = "cli_data";
 const PORT: u32 = 6969;
-pub const HIDE_HB : bool = false;
+pub const HIDE_HB : bool = true;
 
 const KNOWN_TEENSY_METADATA_COUNT: usize = 4;
 
@@ -33,6 +33,7 @@ pub struct Node {
     mac_str: String,
     pub is_connected: bool,
     pub coords: Coord3D,
+    pub last_dist: float,
 }
 
 const TEENSY_MACS: [[u8; 6]; KNOWN_TEENSY_METADATA_COUNT] = [
@@ -48,6 +49,7 @@ const TEENSY_IPS: [[u8; KNOWN_TEENSY_METADATA_COUNT]; KNOWN_TEENSY_METADATA_COUN
     [192, 168, 1, 102], // 41, kwsk
     [192, 168, 1, 101], // 1e, prvt
 ];
+//14 C0,0,0;0.46,-0.46,0;0,0.65,0;-0.65,0,0
 pub fn config_const_nodes() -> [Node; 4]{
     return [
         Node{
@@ -62,6 +64,7 @@ pub fn config_const_nodes() -> [Node; 4]{
                 y: 0.0,
                 z: 0.0,
             },
+            last_ping: 0,
         },
         Node{
             name: String::from("RICO"),
@@ -71,10 +74,13 @@ pub fn config_const_nodes() -> [Node; 4]{
             mac_str: format!("{:02x}", TEENSY_MACS[1][5]),
             is_connected: false,
             coords: Coord3D{
-                x: 1.0,
-                y: 1.0,
+                // x: 1.0,
+                x: 0.46,
+                y: -0.46,
+                // y: 1.0,
                 z: 0.0,
             },
+            last_ping: 0,
         },
         Node{
             name: String::from("KWSK"),
@@ -84,10 +90,11 @@ pub fn config_const_nodes() -> [Node; 4]{
             mac_str: format!("{:02x}", TEENSY_MACS[2][5]),
             is_connected: false,
             coords: Coord3D{
-                x: 1.0,
-                y: 13.0,
+                x: 0.0,
+                y: 0.65,
                 z: 0.0,
             },
+            last_ping: 0,
         },
         Node{
             name: String::from("PRVT"),
@@ -97,10 +104,11 @@ pub fn config_const_nodes() -> [Node; 4]{
             mac_str: format!("{:02x}", TEENSY_MACS[3][5]),
             is_connected: false,
             coords: Coord3D{
-                x: 20.0,
-                y: 1.0,
+                x: -0.65,
+                y: 0.0,
                 z: 0.0,
             },
+            last_ping: 0,
         },
     ];
 }
@@ -184,10 +192,10 @@ impl Config {
 
     pub fn full_mac(&self, last_byte: u8) -> [u8; 6]{
         // return the mac matching the last 2 digits provided
-        println!("Looking for mac with last byte: {:02x}", last_byte);
+        // println!("Looking for mac with last byte: {:02x}", last_byte);
         for mac in self.teensy_macs.iter() {
             if mac[5] == last_byte {
-                println!("Found mac: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+                // println!("Found mac: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
                 return *mac;
             }
         }
