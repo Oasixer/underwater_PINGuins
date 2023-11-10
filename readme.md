@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-This repo contains [firmware for underwater beacons](#firmware), the [rust command and control server](#command-server), and the [dashboard UI](#dashboard).
+This repo contains C++ firmware for underwater beacons, the command and control server (Rust), and the dashboard UI (SvelteJS).
 </p>
 
 ![image](https://kaelan.xyz/images/portfolio/pinguins/underwater/full.jpg)
