@@ -1,9 +1,10 @@
 # Pinguins - Distributed Underwater Positioning System
 
-<p align="center">Software for Pinguins, 2023 Winner of 'Best Overall Project' at U of Waterloo Mechatronics Eng. Capstone Design Symposium. The project used 4 custom-made underwater acoustic beacons with one mounted to a moving underwater ROV and was able to locate the ROV (like underwater GPS). We achieved 85+ meter range, and ~98% accuracy even at smaller scales.
+<p align="center">Software for Pinguins, 2023 Winner of 'Best Overall Project' at U of Waterloo Mechatronics Eng. Capstone Design Symposium. The project used 4 custom-made underwater acoustic beacons with one mounted to a moving underwater ROV and was able to locate the ROV (like underwater GPS). We achieved 85+ meter range, and average ~98% accuracy.
+</p>
 
+<p align="center">
 This repo contains [firmware for underwater beacons](#firmware), the [rust command and control server](#command-server), and the [dashboard UI](#dashboard).
-
 </p>
 
 ![image](https://kaelan.xyz/images/portfolio/pinguins/underwater/full.jpg)
@@ -94,20 +95,51 @@ This repo contains [firmware for underwater beacons](#firmware), the [rust comma
 
 ## Command Server Requirements
 
-- rust version >= 1.7.3
-  - Install with:
+- rust version >= 1.7.3, can be installed with:
 
 ```console
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+$ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
 ## Command Server Installation
 
-## Command Server CLI
+from `command_server/`, run
 
 ```console
+$ cd command_server
 $ cargo build
 ```
 
-Cargo install
-(nightly? etc? get history from yog)
+## Command Server Usage
+
+from `command_server/`, run
+
+```console
+$ cargo run
+```
+
+## Command Server CLI
+
+WIP
+
+# Dashboard
+
+The dashboard displays a map and each node ping shows up as a flashing ring, and each of the positions update in real time.
+
+## Dashboard Requirements
+
+npm version >= 9.5.0 is required.
+
+## Dashboard Installation
+
+from `frontend/`, run
+
+```console
+$ npm i
+```
+
+## Dashboard Usage
+
+```console
+$ npm run dev
+```
