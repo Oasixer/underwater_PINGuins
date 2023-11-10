@@ -106,7 +106,6 @@ $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 from `command_server/`, run
 
 ```console
-$ cd command_server
 $ cargo build
 ```
 
