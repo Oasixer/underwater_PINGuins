@@ -21,7 +21,7 @@ This repo contains C++ firmware for underwater beacons, the command and control 
   - [Requirements](#firmware-requirements)
   - [Installation](#firmware-installation)
   - [Usage](#firmware-usage)
-- [Command Server](#command-server)
+- [Command Server](#command-server-rust)
   - [Requirements](#command-server-requirements)
   - [Installation](#command-server-installation)
   - [Usage](#command-server-usage)
@@ -37,7 +37,7 @@ This repo contains C++ firmware for underwater beacons, the command and control 
 
 ![image](https://github.com/Oasixer/underwater_PINGuins/assets/24990515/ebc98be9-f576-4526-b10f-b761287a96c9)
 
-- Each Node, including the ROV, communicates with the orchestrating [Command Server](#command-server).
+- Each Node, including the ROV, communicates with the orchestrating [Command Server](#command-server-rust).
 - The Rust Server accepts TCP connections from Nodes and accepts web requests for updated data from the dashboard.
 - The nodes send debug information over TCP such as on sending or receiving an acoustic signal or the detected frequency magnitudes.
 - Additionally, the ROV node calculates its position and sends it to the server as a different message type over the same TCP connection.
@@ -69,7 +69,7 @@ This repo contains C++ firmware for underwater beacons, the command and control 
 ## Dashboard Overview
 
 - The dashboard is written in SvelteJS and displays a live map showing live position updates
-- It is served by the [Command Server](#command-server) which uses [Rocket](https://rocket.rs) as a web server in the background
+- It is served by the [Command Server](#command-server-rust) which uses [Rocket](https://rocket.rs) as a web server in the background
 
 - image go here!!!!!!!!!!!!!!!!!
 
