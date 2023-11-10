@@ -3,6 +3,8 @@
 <p align="center">Software for Pinguins, 2023 Winner of 'Best Overall Project' at U of Waterloo Mechatronics Eng. Capstone Design Symposium. The project used 4 custom-made underwater acoustic beacons with one mounted to a moving underwater ROV and was able to locate the ROV (like underwater GPS). We achieved 85+ meter range, and ~98% accuracy even at smaller scales. This repo contains [firmware for underwater beacons](#firmware), the [command and control server (rust)](#command server), and the [dashboard UI](#dashboard).
 </p>
 
+![image](https://kaelan.xyz/images/portfolio/pinguins/underwater/full.jpg)
+
 ## Pinguins table of contents
 
 <!--toc:start-->
@@ -28,8 +30,7 @@
 <!--toc:end-->
 
 # System overview
-
-[]-link system diagram here
+![image](https://github.com/Oasixer/underwater_PINGuins/assets/24990515/ebc98be9-f576-4526-b10f-b761287a96c9)
 
 - Each Node, including the ROV, communicates with the orchestrating [Command Server](#command-server).
 - The Rust Server accepts TCP connections from Nodes and accepts web requests for updated data from the dashboard.
