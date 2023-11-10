@@ -29,7 +29,7 @@ export default ({ mode }) => {
 // 	plugins:  [svelte()],
 // 	plugins: [sveltekit()]
 // 	build: {
-// 		outDir: "../maurice/website_compiled",
+// 		outDir: "../command_server/website_compiled",
 // 	},
 // 	optimizeDeps: {
 //         exclude: ["svelte-navigator"],

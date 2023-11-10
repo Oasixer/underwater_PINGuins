@@ -4,6 +4,12 @@ use std::fs;
 use std::path::Path;
 use serde::Serialize;
 
+// Author's note:
+//
+// If I were to write this again / if it was a project that others were actively using,
+// I would for sure build the configuration struct from a yaml or something
+//
+// for example, confique loads config struct from yaml nicely
 
 const TIMEOUT_READ_MS: u64 = 1000;
 pub const HB_TIMEOUT_MS: u64 = 5000;
@@ -24,6 +30,7 @@ pub struct Coord3D {
     pub y: f32,
     pub z: f32,
 }
+
 #[derive(Serialize, Clone)]
 pub struct Node {
     name: String,
@@ -36,20 +43,20 @@ pub struct Node {
     pub last_dist: float,
 }
 
-const TEENSY_MACS: [[u8; 6]; KNOWN_TEENSY_METADATA_COUNT] = [
+const TEENSY_MACS: [[u8; 6]; 4] = [
     [0x04, 0xe9, 0xe5, 0x14, 0x0f, 0x14],
     [0x04, 0xe9, 0xe5, 0x14, 0x0e, 0xf1],
     [0x04, 0xe9, 0xe5, 0x14, 0x3f, 0x41],
     [0x04, 0xe9, 0xe5, 0x14, 0x3f, 0x1e],
 ];
 
-const TEENSY_IPS: [[u8; KNOWN_TEENSY_METADATA_COUNT]; KNOWN_TEENSY_METADATA_COUNT] = [
+const TEENSY_IPS: [[u8; 4]; 4] = [
     [192, 168, 1, 100], // 14, skip
     [192, 168, 1, 103], // f1, rico
     [192, 168, 1, 102], // 41, kwsk
     [192, 168, 1, 101], // 1e, prvt
 ];
-//14 C0,0,0;0.46,-0.46,0;0,0.65,0;-0.65,0,0
+
 pub fn config_const_nodes() -> [Node; 4]{
     return [
         Node{
