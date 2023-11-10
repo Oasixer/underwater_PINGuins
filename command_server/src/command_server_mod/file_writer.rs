@@ -14,7 +14,7 @@ use std::sync::Arc;
 use super::AdcMsgToWrite;
 
 use super::{
-    Command, Maurice, AdcRecMetadata, SoundEffect, ClientSocketWrapper};
+    Command, CommandServer, AdcRecMetadata, SoundEffect, ClientSocketWrapper};
 use crate::{do_nothing, config::Config, config::MSG_SIZE_BYTES};
 
 

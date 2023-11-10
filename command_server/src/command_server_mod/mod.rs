@@ -15,14 +15,14 @@ use std::time::Instant;
 
 
 mod server;
-mod msound_player;
+mod sound_player_mod;
 mod stdin_listener;
 mod file_writer;
 mod consume_data;
 // mod web_server;
 
-use msound_player::SoundPlayer;
-use msound_player::SoundEffect;
+use sound_player_mod::SoundPlayer;
+use sound_player_mod::SoundEffect;
 use crate::config::{
     Config,
     OUTGOING_CMD_SIZE_BYTES,
@@ -62,7 +62,7 @@ pub struct AdcMsgToWrite{
 }
 
 // #[derive(std::convert::AsRef)]
-pub struct Maurice{
+pub struct CommandServer{
     sound_player: SoundPlayer,
     config: Config,
     // client_sockets: Vec<TcpStream>,
@@ -148,7 +148,7 @@ struct Command{
 }
 
 
-impl Maurice {
+impl CommandServer {
 
     pub fn get_node_data_display(&self) -> NodeDataDisplayGuarded{
         self.data_provided_to_frontend.clone()
@@ -198,7 +198,7 @@ impl Maurice {
         let server: TcpListener = match server_result {
             Ok(server) => server,
             Err(e) => {
-                sound_player.play_sound_effect(msound_player::SoundEffect::Error);
+                sound_player.play_sound_effect(sound_player_mod::SoundEffect::Error);
                 eprintln!("Tried to bind this ip: {}, received error: {}",config.my_ip.as_str(), e);
                 println!("!!! YOU ARE ON THE WRONG NETWORK !!!");
                 thread_sleep(500);
@@ -229,7 +229,7 @@ impl Maurice {
 
         // let tx_display_data = web_server::start_web_server_thread();
 
-        Maurice {
+        CommandServer {
             sound_player,
             config,
             client_sockets,

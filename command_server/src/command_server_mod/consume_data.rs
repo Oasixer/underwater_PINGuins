@@ -4,12 +4,12 @@ use std::io::ErrorKind;
 use std::time::Instant;
 
 use super::{
-    Maurice,
+    CommandServer,
     ClientSocketWrapper,
     AdcMsgToWrite,
     MSG_SIZE_BYTES,
     NodeDataDisplay,
-    msound_player::{ SoundEffect, },
+    sound_player_mod::{ SoundEffect, },
 };
 use crate::config::{
     Coord3D,
@@ -20,7 +20,7 @@ use crate::utils::{
 };
 
 
-impl Maurice {
+impl CommandServer {
     pub(super) fn poll_for_finished_recording(&mut self){
         // iterate self.client_sockets
         for client_socket_wrapper in self.client_sockets.iter_mut() {

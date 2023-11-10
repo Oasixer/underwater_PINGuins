@@ -5,7 +5,7 @@ use std::io::Write;
 use std::time::{Duration, Instant};
 
 use super::{
-    Command, Maurice, AdcRecMetadata, SoundEffect, ClientSocketWrapper, ConnectionChange};
+    Command, CommandServer, AdcRecMetadata, SoundEffect, ClientSocketWrapper, ConnectionChange};
 use crate::{do_nothing, config::Config, utils::hex_string_to_u8};
 use crate::config::{DATA_STREAM_DIR, ADC_DATA_DIR};
 use crate::utils::{create_directories, thread_sleep};
@@ -75,7 +75,7 @@ pub fn start_stdin_listener_thread2() -> Receiver<String> {
             // stdin().read_line(&mut buffer).unwrap();
 }
 
-impl Maurice{
+impl CommandServer{
     pub fn report_cmd(&self, info: &str){
         println!("{}",info);
         // println!("Type next command...");

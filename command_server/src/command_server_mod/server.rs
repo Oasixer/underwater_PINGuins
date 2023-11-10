@@ -9,8 +9,8 @@ use std::sync::mpsc::{channel, Sender, Receiver};
 use crate::utils::{create_parent_directories};
 use crate::config::{MSG_SIZE_BYTES, HB_TIMEOUT_MS, Node};
 use super::{
-    msound_player::{ SoundEffect, },
-    Maurice,
+    sound_player_mod::{ SoundEffect, },
+    CommandServer,
     ConnectionChange,
     ClientSocketWrapper,
     Msg,
@@ -56,10 +56,10 @@ impl ClientSocketWrapper {
     }
 
     pub fn report_begin_recording(&self) {
-        // maurice.sound_player.play_sound_effect(SoundEffect::StartRecording);
+        // command_server.sound_player.play_sound_effect(SoundEffect::StartRecording);
         let duration = self.adc_rec_metadata.duration.expect("duration not set yet???");
         self.fprint(&format!("Began recording data for {} sec\n", duration.as_secs()));
-        // maurice.sound_player.play_sound_effect(SoundEffect::StartRecording);
+        // command_server.sound_player.play_sound_effect(SoundEffect::StartRecording);
     }
     pub fn poll_for_disconnect(&self) -> bool{
         if self.latest_connection_change.as_ref().unwrap().is_connected == false{
@@ -76,7 +76,7 @@ impl ClientSocketWrapper {
 }
 
 
-impl Maurice {
+impl CommandServer {
     pub(super) fn accept_new_connections_nonblocking(&mut self) {
         // .accept() returns Result<(TcpStream, SocketAddr)>
         if let Ok((mut socket, addr)) = self.server.accept() {

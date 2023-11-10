@@ -1,9 +1,9 @@
 module layout:
 
-mod mmaurice
+mod command_server_mod
     setup()
     loop()
-    struct Maurice
+    struct CommandServer
         sound_player: Soundplayer
         msg_proc: MsgProc
 

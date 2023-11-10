@@ -1,8 +1,8 @@
 [package]
-name = "maurice"
+name = "command_server"
 version = "0.1.0"
 edition = "2021"
-default-run = "maurice"
+default-run = "command_server"
 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -23,7 +23,7 @@ strum_macros = "0.24.3"
 tokio = "1.26.0"
 
 [[bin]]
-name = "maurice"
+name = "command_server"
 path = "src/main.rs"
 
 [[bin]]

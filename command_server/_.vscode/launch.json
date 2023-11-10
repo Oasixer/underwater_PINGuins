@@ -6,7 +6,7 @@
              "type": "cppvsdbg",
              "request": "launch",
              "preLaunchTask": "cargo build",
-             "program": "${workspaceRoot}/target/debug/maurice.exe",
+             "program": "${workspaceRoot}/target/debug/command_server.exe",
              "args": [],
              "stopAtEntry": false,
              "cwd": "${workspaceRoot}",

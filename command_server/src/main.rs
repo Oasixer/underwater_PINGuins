@@ -1,8 +1,8 @@
 // #![feature(const_trait_impl)]
-mod mmaurice;
+mod command_server_mod;
 mod config;
 
-use mmaurice::{
+use command_server_mod::{
     NodeDataDisplayGuarded,
 };
 
@@ -44,12 +44,12 @@ async fn main() -> std::io::Result<()> {
     //     }
     // });
     let config = config::Config::new();
-    let mut maurice = mmaurice::Maurice::new(config);
+    let mut command_server = command_server_mod::CommandServer::new(config);
 
-    let node_data_display = maurice.get_node_data_display();
+    let node_data_display = command_server.get_node_data_display();
 
     thread::spawn(move || {
-        maurice.run();
+        command_server.run();
     });
 
     let frontend_location = String::from("../frontend/build");

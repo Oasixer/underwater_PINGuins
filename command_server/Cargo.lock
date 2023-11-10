@@ -497,6 +497,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "command_server"
+version = "0.1.0"
+dependencies = [
+ "actix-files",
+ "actix-web",
+ "chrono",
+ "futures",
+ "rodio",
+ "rustyline",
+ "serde",
+ "serde_json",
+ "strum",
+ "strum_macros",
+ "tokio",
+]
+
+[[package]]
 name = "convert_case"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1188,23 +1205,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b823e83b2affd8f40a9ee8c29dbc56404c1e34cd2710921f2801e2cf29527afa"
 dependencies = [
  "libc",
-]
-
-[[package]]
-name = "maurice"
-version = "0.1.0"
-dependencies = [
- "actix-files",
- "actix-web",
- "chrono",
- "futures",
- "rodio",
- "rustyline",
- "serde",
- "serde_json",
- "strum",
- "strum_macros",
- "tokio",
 ]
 
 [[package]]
