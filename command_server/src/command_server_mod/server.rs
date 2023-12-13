@@ -86,7 +86,7 @@ impl CommandServer {
             };
 
             let mac: [u8;6] = self.config.get_mac_from_ip(ip_bytes).expect("failed to get mac from ip");
-            let name: String = self.config.get_desig_from_ip(ip_bytes).expect("failed to get mac from ip");
+            let name: String = self.config.get_desig_from_ip(ip_bytes).expect("failed to get desig from ip");
 
             // get mac last byte as string using from_utf8:
             // let last_mac_byte_vec = vec![mac[5]];

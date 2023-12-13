@@ -127,7 +127,7 @@
           // return parseNodeDataDisplay(exampleData(), replay_pac);
       } else {
         if (!MEGA_TEMP_DONT_EVER_USE_SERVER_AAAAAAAAAAAAAAA){
-          const response = await fetch('/test');
+          const response = await fetch('/getNodeData'); // <-------------- server req for data!!
           const data = await response.json();
           return parseNodeDataDisplay(data);
         }
@@ -139,14 +139,8 @@
 
     $: seconds = node_data.updated.getSeconds();
 
-    // let rectX: number = 50;
-    // let rectY: number = 50;
-  
-
   let mounted = false;
   let updatedStr = "";
-  let coordsXStr = "";
-  let coordsYStr = "";
 
   let mouseX: number;
   let mouseY: number;

@@ -13,8 +13,8 @@ use std::thread;
 
 use actix_web::{get, App, HttpResponse, HttpRequest, HttpServer, Responder, web::{self, Data}};
 
-#[get("/test")]
-async fn test2(data: Data<NodeDataDisplayGuarded>) -> impl Responder{
+#[get("/getNodeData")]
+async fn getNodeData(data: Data<NodeDataDisplayGuarded>) -> impl Responder{
     let data = data.lock().unwrap();
     // println!("data: {:?}", data.nodes[0].coords.x);
     // let json_str = json_to_string(&data).unwrap();
@@ -25,24 +25,6 @@ async fn test2(data: Data<NodeDataDisplayGuarded>) -> impl Responder{
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // let my_struct = DataProvidedToFrontend {
-    //     positions_json: "{counter: -1}".to_string(),
-    // };
-    // let my_struct = Arc::new(Mutex::new(my_struct));
-
-    // let my_struct_clone = my_struct.clone();
-    // thread::spawn(move || {
-    //     let mut counter:u32 = 0;
-    //     loop {
-    //         {
-    //             let mut my_struct = my_struct_clone.lock().unwrap();
-    //             my_struct.positions_json = format!("{{\"counter\": {}}}", counter);
-    //             counter += 1;
-    //         }
-    //         // println!("counter: {}", counter);
-    //         thread::sleep(Duration::from_secs(1));
-    //     }
-    // });
     let config = config::Config::new();
     let mut command_server = command_server_mod::CommandServer::new(config);
 
